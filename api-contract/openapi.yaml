@@ -1,0 +1,459 @@
+openapi: 3.0.3
+info:
+  title: Bookpal API
+  version: 0.1.0
+  description: >
+    Bookpal'ın randevu ve danışan takip API'si. Her kullanıcı yalnızca kendi kayıtlarını görür;
+    başkasına ait kayıtlar 404 döner. Tarihler YYYY-AA-GG, saatler SS:dd biçimindedir.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Sunucunun çalıştığını doğrular.
+      security: []
+      responses:
+        '200':
+          description: Sunucu çalışıyor.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /auth/login:
+    post:
+      summary: E-posta ve parola ile giriş yapar; oturum çerezi ve jeton döndürür.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Giriş başarılı. Aynı jeton `bookpal_session` çerezi olarak da set edilir.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/logout:
+    post:
+      summary: Oturumu kapatır.
+      responses:
+        '204':
+          description: Oturum kapatıldı.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      summary: Giriş yapmış kullanıcıyı döndürür.
+      responses:
+        '200':
+          description: Geçerli kullanıcı.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /clients:
+    get:
+      summary: Aktif danışanları listeler; isteğe bağlı ada göre arar.
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Ad ve soyadda büyük/küçük harf, aksan ve İ/ı farkı gözetmeden "içerir" araması.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Soyada, sonra ada göre sıralı danışanlar.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clients:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Yeni danışan ekler.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientInput'
+      responses:
+        '201':
+          description: Danışan oluşturuldu.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client:
+                    $ref: '#/components/schemas/Client'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /clients/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      summary: Tek bir danışanı döndürür.
+      responses:
+        '200':
+          description: Danışan.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client:
+                    $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Danışanın verilen alanlarını günceller (en az bir alan gerekir).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientPatch'
+      responses:
+        '200':
+          description: Güncellenmiş danışan.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client:
+                    $ref: '#/components/schemas/Client'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Danışanı siler (soft delete). Eski randevuları erişilebilir kalır.
+      responses:
+        '204':
+          description: Danışan silindi.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /appointments:
+    get:
+      summary: Tarih aralığındaki randevuları listeler (gün, hafta ve ay aynı çağrıdır).
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Başlangıç tarihi (dahil).
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          description: Bitiş tarihi (dahil). Aralık en fazla 366 gün olabilir.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Tarihe, sonra başlangıç saatine göre sıralı randevular.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AppointmentView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Yeni randevu oluşturur. Çakışan aktif randevu varsa 409 döner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentInput'
+      responses:
+        '201':
+          description: Randevu oluşturuldu.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointment:
+                    $ref: '#/components/schemas/AppointmentView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /appointments/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      summary: Tek bir randevuyu döndürür.
+      responses:
+        '200':
+          description: Randevu.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointment:
+                    $ref: '#/components/schemas/AppointmentView'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Randevunun verilen alanlarını günceller. İptal, durumu `cancelled` yapmaktır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentPatch'
+      responses:
+        '200':
+          description: Güncellenmiş randevu.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointment:
+                    $ref: '#/components/schemas/AppointmentView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Randevuyu kalıcı olarak siler.
+      responses:
+        '204':
+          description: Randevu silindi.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+security:
+  - bearerAuth: []
+  - cookieAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: bookpal_session
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    ValidationError:
+      description: Geçersiz girdi.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Oturum yok ya da geçersiz.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Kayıt bulunamadı (başka kullanıcıya ait kayıtlar da bulunamadı sayılır).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Bu saat aralığında başka bir aktif randevu var.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [validation_error, unauthorized, not_found, conflict, server_error]
+            message:
+              type: string
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+    Gender:
+      type: string
+      enum: [female, male, other, undisclosed]
+    AppointmentStatus:
+      type: string
+      enum: [scheduled, completed, cancelled]
+    ClientInput:
+      type: object
+      required: [firstName, lastName, birthDate, gender]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+          description: Gelecekte olamaz.
+        gender:
+          $ref: '#/components/schemas/Gender'
+    ClientPatch:
+      type: object
+      minProperties: 1
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/Gender'
+    Client:
+      allOf:
+        - $ref: '#/components/schemas/ClientInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            userId:
+              type: string
+            deletedAt:
+              type: string
+              nullable: true
+    AppointmentInput:
+      type: object
+      required: [clientId, date, startTime, endTime]
+      properties:
+        clientId:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          example: '10:00'
+        endTime:
+          type: string
+          example: '10:30'
+          description: Başlangıç saatinden sonra olmalıdır.
+        status:
+          $ref: '#/components/schemas/AppointmentStatus'
+        note:
+          type: string
+    AppointmentPatch:
+      type: object
+      minProperties: 1
+      properties:
+        clientId:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          $ref: '#/components/schemas/AppointmentStatus'
+        note:
+          type: string
+    AppointmentView:
+      allOf:
+        - $ref: '#/components/schemas/AppointmentInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            userId:
+              type: string
+            client:
+              type: object
+              properties:
+                id:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
