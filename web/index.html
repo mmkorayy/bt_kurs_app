@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bookpal</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="logo">Book<span>pal</span></p>
+          <h1>Randevularını ve danışanlarını tek yerde takip et</h1>
+          <p class="slogan">Not defteri ve mesaj kovalamak yok.</p>
+          <a class="cta" href="#early-access">Erken erişim için kaydol</a>
+        </div>
+
+        <div class="preview" role="img" aria-label="Bookpal uygulama önizlemesi">
+          <div aria-hidden="true">
+            <div class="preview-bar"><span></span><span></span><span></span></div>
+            <div class="preview-body">
+              <div class="week">
+                <div class="day">
+                  <p class="day-name">Pzt</p>
+                  <p class="appt appt-selected">10:00 Elif</p>
+                </div>
+                <div class="day">
+                  <p class="day-name">Sal</p>
+                  <p class="appt">14:00 Mert</p>
+                </div>
+                <div class="day">
+                  <p class="day-name">Çar</p>
+                  <p class="appt">11:30 Selin</p>
+                  <p class="appt">16:00 Can</p>
+                </div>
+              </div>
+              <div class="client-card">
+                <p class="client-name">Elif</p>
+                <p class="client-meta">Son randevu: Pzt 10:00</p>
+                <p class="client-note">Not: Uyku düzeni üzerine konuştuk.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="problem-solution">
+      <div class="container">
+        <h2>Danışan takibi neden bu kadar dağınık?</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Sorun</h3>
+            <ul>
+              <li>Dağınık not defterleri ve dosyalar</li>
+              <li>Mesajlarda randevu kovalamak</li>
+              <li>Unutulan danışan notları</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Çözüm</h3>
+            <p>Bookpal'da takvimin ve her danışanın geçmişi tek yerde durur. Randevuya bakarken notu da görürsün.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="container">
+        <h2>Nasıl çalışır?</h2>
+        <div class="grid">
+          <div class="card">
+            <span class="step-number">1</span>
+            <h3>Müsait saatlerini belirle</h3>
+            <p>Çalışabileceğin gün ve saatleri bir kez girersin.</p>
+          </div>
+          <div class="card">
+            <span class="step-number">2</span>
+            <h3>Danışanların randevu alsın</h3>
+            <p>Danışanların sana uygun saatlerden birini seçer.</p>
+          </div>
+          <div class="card">
+            <span class="step-number">3</span>
+            <h3>Notları ve geçmişi tek yerden takip et</h3>
+            <p>Her görüşmeden sonra notunu yaz, bir sonraki randevuda hemen bul.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="early-access">
+      <div class="container form-wrap">
+        <h2>Erken erişim için kaydol</h2>
+        <p class="form-intro">Bookpal'ı ilk deneyenlerden biri ol. Bilgilerini bırak, hazır olunca haber verelim.</p>
+
+        <form id="signup-form" class="card" method="post" novalidate>
+          <div class="field">
+            <label for="signup-name">Ad soyad</label>
+            <input id="signup-name" name="name" type="text" autocomplete="name">
+            <p id="signup-name-error" class="field-error" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="signup-email">E-posta</label>
+            <input id="signup-email" name="email" type="email" autocomplete="email">
+            <p id="signup-email-error" class="field-error" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="signup-profession">Meslek</label>
+            <select id="signup-profession" name="profession">
+              <option value="">Mesleğini seç</option>
+              <option>Koç</option>
+              <option>Psikolog</option>
+              <option>Psikiyatrist</option>
+              <option>Danışman</option>
+              <option>Diğer</option>
+            </select>
+            <p id="signup-profession-error" class="field-error" role="alert"></p>
+          </div>
+          <p id="signup-error" class="form-error" role="alert" hidden></p>
+          <button id="signup-submit" class="cta" type="submit">Kaydol</button>
+          <p class="privacy">E-postanız yalnızca Bookpal duyuruları için kullanılacak.</p>
+          <noscript><p class="form-error">Bu form JavaScript ile çalışır; lütfen tarayıcınızda JavaScript'i açın.</p></noscript>
+        </form>
+
+        <div id="signup-success" aria-live="polite">
+          <div class="card" hidden>
+            <h3>Teşekkürler!</h3>
+            <p>Kaydın bize ulaştı. Bookpal hazır olduğunda sana haber vereceğiz.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <p>© 2026 Bookpal</p>
+      <p>Randevularını ve danışanlarını tek yerde takip et.</p>
+      <nav aria-label="Sayfa bölümleri">
+        <a href="#problem-solution">Sorun ve çözüm</a>
+        <a href="#how-it-works">Nasıl çalışır</a>
+        <a href="#early-access">Erken erişim</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
