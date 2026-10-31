@@ -46,7 +46,7 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 - The form POSTs JSON to `FORM_ENDPOINT` at the top of `web/script.js`. While it is `""` the form shows an error and never shows success, so signups are not lost silently. Do not connect an external form service without asking first.
 - Do not add a framework or library without asking (the backend uses only Express plus dev tools).
 - Backend work happens on a feature branch (`feat/...`) rather than straight on `main`.
-- Never commit or push without being asked. Pushing needs Koray's own GitHub login (`github.com/mmkorayy/bt_kurs_app`).
+- Commit after each completed plan task, once its tests pass, on a feature branch (`feat/...`, `docs/...`). Koray allows Claude to push those branches (`github.com/mmkorayy/bt_kurs_app`). Never push `main`, never force-push, and never merge: Koray opens and merges the pull request himself (`gh` is not installed). If a push fails because of authentication, say so and let Koray push.
 
 ## Workflow
 
