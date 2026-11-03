@@ -4,6 +4,7 @@ import { notFound } from './domain/errors.js';
 import { createAppointmentRouter } from './http/appointment-routes.js';
 import { createAuthRouter } from './http/auth-routes.js';
 import { createClientRouter } from './http/client-routes.js';
+import { createDocsRouter } from './http/docs-routes.js';
 import { errorHandler } from './http/error-handler.js';
 import type { AppointmentService } from './services/appointment-service.js';
 import type { ClientService } from './services/client-service.js';
@@ -14,6 +15,8 @@ export interface AppDeps {
   appointments: AppointmentService;
   production: boolean;
   staticDir?: string;
+  /** Verilirse /docs altında Swagger UI sunulur; production'da hiç eklenmez. */
+  docs?: { specPath: string };
 }
 
 export function createApp(deps: AppDeps): express.Express {
@@ -28,6 +31,7 @@ export function createApp(deps: AppDeps): express.Express {
   app.use('/api/v1/appointments', createAppointmentRouter(deps.sessions, deps.appointments));
 
   app.use('/api', (_req, _res, next) => next(notFound('Adres bulunamadı.')));
+  if (deps.docs && !deps.production) app.use('/docs', createDocsRouter(deps.docs.specPath));
   if (deps.staticDir) app.use(express.static(deps.staticDir));
   app.use(errorHandler);
   return app;

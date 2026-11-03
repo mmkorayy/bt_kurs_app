@@ -30,6 +30,7 @@ Bookpal is a planned appointment and client-tracking app for people who see clie
 Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs/superpowers/plans/2026-11-01-bookpal-backend.md`. It mirrors the teacher's Ritma backend (clients are called `clients`, not `customers`).
 
 - Commands (inside `backend/`): `npm install` first (`node_modules` is not in git), `npm test` (Node's test runner with `tsx`), `npm run dev` (watch mode), `npm run build` (`dist/`), `npm start`. The server also serves `web/`: run `npm run dev`, open `http://localhost:3000` (`PORT` changes it).
+- API docs: with the server running, open `http://localhost:3000/docs` (Swagger UI from `swagger-ui-dist`, reads `api-contract/openapi.yaml`, so contract changes show up by themselves). Log in with `POST /auth/login` and later "Try it out" calls use the cookie, or paste the token into "Authorize". The route (`src/http/docs-routes.ts`, wired through `AppDeps.docs`) is not mounted when `NODE_ENV=production`.
 - `npm` is not installed on Koray's machine (only Node bundled with the balena tool). Installs were done with the npm inside a snap: `node /snap/kf6-core22/43/usr/lib/node_modules/npm/bin/npm-cli.js install`. Tests and the build run without npm: `node --import tsx --test "src/**/*.test.ts"` and `node node_modules/typescript/bin/tsc`.
 - One test file: `node --import tsx --test src/services/appointment-service.test.ts`.
 - `npm test` does not type-check and test files are not part of the `tsc` build: run `npm run build` for type errors.
@@ -44,7 +45,7 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 - File names, folder names, CSS classes and `id`s are English ASCII. Visible text is Turkish.
 - The page must work at 360px width with no horizontal scrolling, and the signup button must be visible on the first screen.
 - The form POSTs JSON to `FORM_ENDPOINT` at the top of `web/script.js`. While it is `""` the form shows an error and never shows success, so signups are not lost silently. Do not connect an external form service without asking first.
-- Do not add a framework or library without asking (the backend uses only Express plus dev tools).
+- Do not add a framework or library without asking (the backend uses only Express, `swagger-ui-dist` and dev tools).
 - Backend work happens on a feature branch (`feat/...`) rather than straight on `main`.
 - Commit after each completed plan task, once its tests pass, on a feature branch (`feat/...`, `docs/...`). Koray allows Claude to push those branches (`github.com/mmkorayy/bt_kurs_app`). Never push `main`, never force-push, and never merge: Koray opens and merges the pull request himself (`gh` is not installed). If a push fails because of authentication, say so and let Koray push.
 
