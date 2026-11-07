@@ -1,17 +1,26 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate } from 'react-router';
+import { Link, Navigate, useLocation } from 'react-router';
 import { ApiError } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
+import { useDocumentTitle } from '../../lib/useDocumentTitle';
 import './Login.css';
 
+/** RequireAuth'un bıraktığı "geldiği sayfa" yalnızca /panel altındaysa kullanılır; yoksa günlük görünüm. */
+function returnPath(state: unknown): string {
+  const from = (state as { from?: unknown } | null)?.from;
+  return typeof from === 'string' && /^\/panel(\/|\?|$)/.test(from) ? from : '/panel';
+}
+
 export function Login() {
+  useDocumentTitle('Giriş');
+  const location = useLocation();
   const { user, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
 
-  if (user) return <Navigate to="/panel" replace />;
+  if (user) return <Navigate to={returnPath(location.state)} replace />;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

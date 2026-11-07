@@ -12,6 +12,7 @@
 }
 
 .clients-add {
+  min-height: 2.75rem;
   padding: 0.6rem 1.25rem;
   border: 0;
   border-radius: 999px;
@@ -43,6 +44,7 @@
 
 .clients-state { color: var(--muted); }
 .clients-retry {
+  min-height: 2.75rem;
   padding: 0.5rem 1rem;
   border: 1.5px solid var(--field-border);
   border-radius: 999px;
@@ -79,11 +81,12 @@
   gap: 0.25rem 1rem;
   min-width: 0;
 }
-.clients-info strong { color: var(--teal); }
+.clients-info strong { color: var(--teal); overflow-wrap: anywhere; }
 .clients-info span { color: var(--muted); font-size: 0.875rem; }
 
 .clients-actions { display: flex; gap: 0.5rem; }
 .clients-actions button {
+  min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   border: 1.5px solid var(--field-border);
   border-radius: 999px;
@@ -92,3 +95,6 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* Silme sonrası odak başlığa taşınır; salt okunur başlıkta odak halkası gösterilmez. */
+.clients h1:focus { outline: none; }

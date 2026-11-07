@@ -187,3 +187,60 @@ test('Escape closes the pop-up and focus goes back to the button that opened it'
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   expect(document.activeElement).toBe(opener);
 });
+
+test('after a delete, keyboard focus moves to the page heading', async () => {
+  let lists = 0;
+  stubFetch({
+    [ME]: me,
+    [LIST]: () => {
+      lists += 1;
+      return { body: { clients: lists === 1 ? [ELIF] : [] } };
+    },
+    'DELETE /api/v1/clients/c1': () => ({ status: 204 }),
+  });
+  openClients();
+  fireEvent.click(await screen.findByRole('button', { name: 'Sil: Elif Yıldız' }));
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sil' }));
+  expect(await screen.findByText('Henüz danışan yok')).toBeTruthy();
+  expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
+});
+
+test('while a client is being saved the form cannot be closed', async () => {
+  let release!: () => void;
+  const { calls } = stubFetch({
+    [ME]: me,
+    [LIST]: () => ({ body: { clients: [] } }),
+    'POST /api/v1/clients': () => new Promise((resolve) => (release = () => resolve({ status: 201, body: { client: ELIF } }))),
+  });
+  openClients();
+  fireEvent.click(await screen.findByRole('button', { name: 'Danışan ekle' }));
+  fillForm({ first: 'Elif', last: 'Yıldız', birth: '1990-05-17', gender: 'female' });
+  const dialog = screen.getByRole('dialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+  await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true));
+  fireEvent.keyDown(document, { key: 'Escape' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Kapat' }));
+  expect(screen.getByRole('dialog')).toBeTruthy();
+  expect((within(dialog).getByRole('button', { name: 'Vazgeç' }) as HTMLButtonElement).disabled).toBe(true);
+  release();
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});
+
+test('while a delete is on its way the dialog cannot be dismissed', async () => {
+  let release!: () => void;
+  const { calls } = stubFetch({
+    [ME]: me,
+    [LIST]: () => ({ body: { clients: [ELIF] } }),
+    'DELETE /api/v1/clients/c1': () => new Promise((resolve) => (release = () => resolve({ status: 204 }))),
+  });
+  openClients();
+  fireEvent.click(await screen.findByRole('button', { name: 'Sil: Elif Yıldız' }));
+  const dialog = screen.getByRole('dialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Sil' }));
+  await waitFor(() => expect(calls.some((c) => c.method === 'DELETE')).toBe(true));
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(screen.getByRole('dialog')).toBeTruthy();
+  expect((within(dialog).getByRole('button', { name: 'Vazgeç' }) as HTMLButtonElement).disabled).toBe(true);
+  release();
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});

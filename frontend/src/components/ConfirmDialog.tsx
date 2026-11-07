@@ -13,7 +13,8 @@ interface ConfirmDialogProps {
 /** Tarayıcının confirm kutusu yerine sayfa içi onay penceresi. */
 export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCancel, error, busy }: ConfirmDialogProps) {
   return (
-    <Modal title={title} onClose={onCancel}>
+    // Silme sürerken pencere kapatılamaz: kapansa da silme devam ederdi.
+    <Modal title={title} onClose={busy ? () => undefined : onCancel}>
       <p>{message}</p>
       {error && (
         <p className="modal-error" role="alert">
@@ -21,7 +22,7 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
         </p>
       )}
       <div className="modal-actions">
-        <button className="modal-secondary" type="button" onClick={onCancel}>
+        <button className="modal-secondary" type="button" onClick={onCancel} disabled={busy}>
           Vazgeç
         </button>
         <button className="modal-primary" type="button" onClick={onConfirm} disabled={busy}>

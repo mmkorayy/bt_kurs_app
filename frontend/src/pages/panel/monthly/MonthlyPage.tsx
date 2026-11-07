@@ -2,11 +2,13 @@ import { Link, useSearchParams } from 'react-router';
 import { listAppointments } from '../../../api/appointments';
 import { addMonths, dateFromQuery, formatLong, formatMonth, monthGrid, monthRange, today, WEEKDAYS_SHORT } from '../../../lib/date';
 import { useApi } from '../../../lib/useApi';
+import { useDocumentTitle } from '../../../lib/useDocumentTitle';
 import './MonthlyPage.css';
 
 export function MonthlyPage() {
   const [params, setParams] = useSearchParams();
   const anchor = dateFromQuery(params.get('tarih'));
+  useDocumentTitle(formatMonth(anchor));
   const { from, to } = monthRange(anchor);
   const grid = monthGrid(anchor);
   const { data: appointments, loading, error, reload } = useApi(() => listAppointments(from, to), [from]);

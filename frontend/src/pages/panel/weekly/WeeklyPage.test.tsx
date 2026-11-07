@@ -49,14 +49,14 @@ test('asks once for Monday to Sunday and shows each appointment under its own da
   expect(await screen.findByRole('heading', { level: 1, name: '2 – 8 Kasım 2026' })).toBeTruthy();
   await screen.findByText('Can Demir');
 
-  const monday = screen.getByRole('region', { name: '2 Kasım Pazartesi' });
+  const monday = screen.getByRole('list', { name: '2 Kasım Pazartesi randevuları' });
   expect(within(monday).getByText('Elif Yıldız')).toBeTruthy();
   expect(within(monday).getByText('09:00')).toBeTruthy();
-  const saturday = screen.getByRole('region', { name: '7 Kasım Cumartesi' });
+  const saturday = screen.getByRole('list', { name: '7 Kasım Cumartesi randevuları' });
   expect(within(saturday).getByText('Can Demir')).toBeTruthy();
   expect(within(saturday).getByText('Selin Kaya')).toBeTruthy();
   expect(within(saturday).queryByText('Elif Yıldız')).toBeNull();
-  const sunday = screen.getByRole('region', { name: '8 Kasım Pazar' });
+  const sunday = screen.getByRole('list', { name: '8 Kasım Pazar randevuları' });
   expect(within(sunday).getByText('Mert Aydın')).toBeTruthy();
 
   expect(calls.filter((c) => c.url.startsWith('/api/v1/appointments'))).toHaveLength(1);
@@ -65,8 +65,8 @@ test('asks once for Monday to Sunday and shows each appointment under its own da
 test('the seven days run Monday to Sunday', async () => {
   stubFetch({ [ME]: me, [WEEK]: () => ({ body: { appointments: [] } }) });
   openWeekly();
-  await screen.findByRole('region', { name: '2 Kasım Pazartesi' });
-  const names = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+  await screen.findByRole('list', { name: '2 Kasım Pazartesi randevuları' });
+  const names = screen.getAllByRole('link', { name: /Kasım/ }).map((link) => link.getAttribute('aria-label'));
   expect(names).toEqual([
     '2 Kasım Pazartesi',
     '3 Kasım Salı',
@@ -76,6 +76,15 @@ test('the seven days run Monday to Sunday', async () => {
     '7 Kasım Cumartesi',
     '8 Kasım Pazar',
   ]);
+});
+
+test('each day is announced once: its name is on the link, the appointments list has its own name', async () => {
+  stubFetch({ [ME]: me, [WEEK]: () => ({ body: { appointments: [MON] } }) });
+  openWeekly();
+  await screen.findByText('Elif Yıldız');
+  expect(screen.getAllByLabelText('2 Kasım Pazartesi')).toHaveLength(1);
+  expect(screen.getAllByLabelText('2 Kasım Pazartesi randevuları')).toHaveLength(1);
+  expect(screen.queryAllByRole('region')).toHaveLength(0);
 });
 
 test('a cancelled appointment is marked as cancelled', async () => {

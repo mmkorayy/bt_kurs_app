@@ -50,3 +50,22 @@ test('/docs is not swallowed by the fallback', async (t) => {
   assert.equal(res.status, 404);
   assert.doesNotMatch(await res.text(), /Bookpal App/);
 });
+
+test('paths that only start with the letters of /api or /docs are still browser routes', async (t) => {
+  const server = startTestServer(buildTestDeps({ staticDir: makeStaticDir() }));
+  t.after(() => server.close());
+  for (const route of ['/apiary', '/docsify', '/api-yok', '/documents']) {
+    const res = await fetch(`${server.baseUrl}${route}`);
+    assert.equal(res.status, 200, route);
+    assert.match(await res.text(), /Bookpal App/, route);
+  }
+});
+
+test('the exact /api and /docs segments stay reserved, also with a trailing slash or a sub-path', async (t) => {
+  const server = startTestServer(buildTestDeps({ staticDir: makeStaticDir(), production: true }));
+  t.after(() => server.close());
+  for (const route of ['/api', '/api/', '/api/yok', '/docs', '/docs/', '/docs/yok']) {
+    const res = await fetch(`${server.baseUrl}${route}`);
+    assert.equal(res.status, 404, route);
+  }
+});

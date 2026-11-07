@@ -3,11 +3,13 @@ import { listAppointments } from '../../../api/appointments';
 import type { AppointmentView } from '../../../api/types';
 import { addDays, dateFromQuery, formatLong, formatWeekRange, today, weekDays, weekStart, WEEKDAYS_SHORT } from '../../../lib/date';
 import { useApi } from '../../../lib/useApi';
+import { useDocumentTitle } from '../../../lib/useDocumentTitle';
 import './WeeklyPage.css';
 
 export function WeeklyPage() {
   const [params, setParams] = useSearchParams();
   const anchor = dateFromQuery(params.get('tarih'));
+  useDocumentTitle(formatWeekRange(anchor));
   const days = weekDays(anchor);
   const monday = days[0];
   const sunday = days[6];
@@ -36,12 +38,12 @@ export function WeeklyPage() {
         {appointments && appointments.length === 0 && <p className="weekly-state">Bu hafta için randevu yok</p>}
         <div className="weekly-grid">
           {days.map((day, index) => (
-            <section className="weekly-day" key={day} aria-label={formatLong(day)}>
+            <div className="weekly-day" key={day}>
               <Link className="weekly-day-link" to={`/panel?tarih=${day}`} aria-label={formatLong(day)}>
                 <span className="weekly-day-name">{WEEKDAYS_SHORT[index]}</span>
                 <span className="weekly-day-number">{Number(day.slice(8))}</span>
               </Link>
-              <ul className="weekly-list">
+              <ul className="weekly-list" aria-label={`${formatLong(day)} randevuları`}>
                 {appointmentsOf(day).map((appointment) => {
                   const cancelled = appointment.status === 'cancelled';
                   return (
@@ -55,7 +57,7 @@ export function WeeklyPage() {
                   );
                 })}
               </ul>
-            </section>
+            </div>
           ))}
         </div>
       </>

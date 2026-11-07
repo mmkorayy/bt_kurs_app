@@ -48,3 +48,35 @@ test('a logged-in user who opens /giris is sent to the panel', async () => {
   renderApp(<App />, { route: '/giris' });
   expect(await screen.findByRole('link', { name: 'Gün' })).toBeTruthy();
 });
+
+test('after logging in the user lands on the page they were trying to open', async () => {
+  let loggedIn = false;
+  stubFetch({
+    [ME]: () => (loggedIn ? { body: { user: DEMO_USER } } : NOT_LOGGED_IN),
+    'POST /api/v1/auth/login': () => {
+      loggedIn = true;
+      return { body: { token: 't', user: DEMO_USER } };
+    },
+    'GET /api/v1/appointments?from=2026-11-02&to=2026-11-08': () => ({ body: { appointments: [] } }),
+  });
+  renderApp(<App />, { route: '/panel/hafta?tarih=2026-11-04' });
+  await screen.findByRole('heading', { name: 'Giriş' });
+  typeCredentials('elif@bookpal.demo', 'demo-elif-123');
+  expect(await screen.findByRole('heading', { level: 1, name: '2 – 8 Kasım 2026' })).toBeTruthy();
+});
+
+test('a visitor who opens /giris directly lands on the daily panel after logging in', async () => {
+  let loggedIn = false;
+  stubFetch({
+    [ME]: () => (loggedIn ? { body: { user: DEMO_USER } } : NOT_LOGGED_IN),
+    'POST /api/v1/auth/login': () => {
+      loggedIn = true;
+      return { body: { token: 't', user: DEMO_USER } };
+    },
+    [`GET /api/v1/appointments?from=${new Date().getFullYear()}`]: () => ({ body: { appointments: [] } }),
+  });
+  renderApp(<App />, { route: '/giris' });
+  await screen.findByRole('heading', { name: 'Giriş' });
+  typeCredentials('elif@bookpal.demo', 'demo-elif-123');
+  await screen.findByRole('navigation', { name: 'Panel menüsü' });
+});

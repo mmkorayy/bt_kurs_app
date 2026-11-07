@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { deleteAppointment, listAppointments, updateAppointment } from '../../../api/appointments';
 import { ApiError } from '../../../api/client';
@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { addDays, dateFromQuery, formatLong, today } from '../../../lib/date';
 import { statusLabel } from '../../../lib/labels';
 import { useApi } from '../../../lib/useApi';
+import { useDocumentTitle } from '../../../lib/useDocumentTitle';
 import { AppointmentForm } from './AppointmentForm';
 import './DailyPage.css';
 
@@ -17,6 +18,7 @@ function clientName(appointment: AppointmentView): string {
 export function DailyPage() {
   const [params, setParams] = useSearchParams();
   const date = dateFromQuery(params.get('tarih'));
+  useDocumentTitle(formatLong(date));
   const { data: appointments, loading, error, reload } = useApi(() => listAppointments(date, date), [date]);
 
   const [editing, setEditing] = useState<AppointmentView | 'new' | null>(null);
@@ -24,16 +26,24 @@ export function DailyPage() {
   const [deleteError, setDeleteError] = useState('');
   const [deletingBusy, setDeletingBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Başka güne geçince eski günün iptal hatası görünmesin.
+  useEffect(() => setActionError(''), [date]);
 
   const goTo = (target: string) => setParams({ tarih: target });
 
   async function cancel(appointment: AppointmentView) {
     setActionError('');
+    setCancellingId(appointment.id);
     try {
       await updateAppointment(appointment.id, { status: 'cancelled' });
       reload();
     } catch (failure) {
       setActionError(failure instanceof ApiError ? failure.message : 'Bir şeyler ters gitti.');
+    } finally {
+      setCancellingId(null);
     }
   }
 
@@ -45,6 +55,8 @@ export function DailyPage() {
       await deleteAppointment(deleting.id);
       setDeleting(null);
       reload();
+      // Sil düğmesi satırla birlikte kaybolacağı için odak sayfa başlığına taşınır.
+      headingRef.current?.focus();
     } catch (failure) {
       setDeleteError(failure instanceof ApiError ? failure.message : 'Bir şeyler ters gitti.');
     } finally {
@@ -86,7 +98,12 @@ export function DailyPage() {
                   Düzenle
                 </button>
                 {appointment.status !== 'cancelled' && (
-                  <button type="button" aria-label={`İptal et: ${name}`} onClick={() => void cancel(appointment)}>
+                  <button
+                    type="button"
+                    aria-label={`İptal et: ${name}`}
+                    disabled={cancellingId === appointment.id}
+                    onClick={() => void cancel(appointment)}
+                  >
                     İptal et
                   </button>
                 )}
@@ -108,7 +125,9 @@ export function DailyPage() {
           <button type="button" aria-label="Önceki gün" onClick={() => goTo(addDays(date, -1))}>
             ‹
           </button>
-          <h1>{formatLong(date)}</h1>
+          <h1 ref={headingRef} tabIndex={-1}>
+            {formatLong(date)}
+          </h1>
           <button type="button" aria-label="Sonraki gün" onClick={() => goTo(addDays(date, 1))}>
             ›
           </button>

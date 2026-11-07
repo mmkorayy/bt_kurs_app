@@ -39,7 +39,8 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
   }
 
   return (
-    <Modal title={client ? 'Danışanı düzenle' : 'Danışan ekle'} onClose={onClose}>
+    // Kayıt sürerken pencere kapatılamaz: kapansa da danışan kaydedilirdi.
+    <Modal title={client ? 'Danışanı düzenle' : 'Danışan ekle'} onClose={saving ? () => undefined : onClose}>
       <form onSubmit={handleSubmit} noValidate>
         <div className="client-form-field">
           <label htmlFor="client-first-name">Ad</label>
@@ -87,7 +88,7 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
           </p>
         )}
         <div className="modal-actions">
-          <button className="modal-secondary" type="button" onClick={onClose}>
+          <button className="modal-secondary" type="button" onClick={onClose} disabled={saving}>
             Vazgeç
           </button>
           <button className="modal-primary" type="submit" disabled={saving}>
