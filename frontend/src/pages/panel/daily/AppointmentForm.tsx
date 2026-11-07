@@ -32,6 +32,8 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
 
   // Randevunun danışanı listede yoksa (silinmiş) seçili kalsın diye ayrıca listelenir.
   const clientMissing = appointment !== undefined && !clients.some((c) => c.id === appointment.clientId);
+  // Liste yüklendi ve boş: yeni randevu için önce danışan eklenmeli.
+  const noClientsYet = !appointment && !clientsResult.error && clientsResult.data !== undefined && clients.length === 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,6 +70,19 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
               </option>
             ))}
           </select>
+          {clientsResult.error && (
+            <div className="appointment-form-list-error">
+              <p className="modal-error" role="alert">
+                {clientsResult.error.message}
+              </p>
+              <button className="modal-secondary" type="button" onClick={clientsResult.reload}>
+                Yeniden dene
+              </button>
+            </div>
+          )}
+          {noClientsYet && (
+            <p className="appointment-form-hint">Henüz danışanınız yok. Önce Danışanlar sekmesinden bir danışan ekleyin.</p>
+          )}
         </div>
         <div className="appointment-form-field">
           <label htmlFor="appointment-date">Tarih</label>
