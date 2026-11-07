@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { sessionStoreContract } from '../contract/session-store.contract.js';
 import { MemorySessionStore } from './session-store.js';
 
 test('create gives a 64-character hex token that find returns', async () => {
@@ -22,3 +23,5 @@ test('delete removes the session', async () => {
   await store.delete(session.token);
   assert.equal(await store.find(session.token), undefined);
 });
+
+sessionStoreContract('memory', async () => ({ store: new MemorySessionStore(), seedUser: async () => {} }));
