@@ -67,7 +67,7 @@ test('the server also serves the built frontend folder', async (t) => {
 });
 
 test('with demo accounts off nobody can log in', async (t) => {
-  const server = startTestServer(buildDeps({ DEMO_ACCOUNTS_ENABLED: 'false' }));
+  const server = startTestServer(await buildDeps({ DEMO_ACCOUNTS_ENABLED: 'false' }));
   t.after(() => server.close());
   const res = await fetch(`${server.baseUrl}/api/v1/auth/login`, {
     method: 'POST',

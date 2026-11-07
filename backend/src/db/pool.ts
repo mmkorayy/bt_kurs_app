@@ -17,5 +17,11 @@ const types = {
 } as pg.CustomTypesConfig;
 
 export function createPool(databaseUrl: string, options: pg.PoolConfig = {}): pg.Pool {
-  return new pg.Pool({ ...options, connectionString: databaseUrl, types });
+  const pool = new pg.Pool({ ...options, connectionString: databaseUrl, types });
+  // Neon boştaki bağlantıları kapatır; dinleyici yoksa bu 'error' olayı Node sürecini çökertir.
+  // Havuz bir sonraki istekte yeni bağlantı açar. Mesaj adres içermez.
+  pool.on('error', (error) => {
+    console.error('Veritabanı bağlantısı koptu, yenisi açılacak:', error.message);
+  });
+  return pool;
 }

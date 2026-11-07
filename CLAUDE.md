@@ -60,7 +60,7 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 - Frontend work is test first (Vitest). Dates are `YYYY-MM-DD` text in local time; never `toISOString()` or `Date.parse` for them.
 - Backend work happens on a feature branch (`feat/...`) rather than straight on `main`.
 - Commit after each completed plan task, once its tests pass, on a feature branch (`feat/...`, `docs/...`). Koray allows Claude to push those branches (`github.com/mmkorayy/bt_kurs_app`). Never push `main`, never force-push, and never merge: Koray opens and merges the pull request himself (`gh` is not installed). If a push fails because of authentication, say so and let Koray push.
-- Each plan task is one branch and one PR. After Koray merges: `git switch main`, `git pull --ff-only`, `git branch -d <branch>`, then wait for his "devam". Give him a ready PR title and description in plain Turkish ("Ne değişti?" and "Nasıl denedim?") to paste.
+- A multi-task plan runs on one feature branch (Koray's request, 07.11): commit after every task, push the branch, and open one PR after all tasks are finished (one PR title and description for the whole branch). Work of a single task is one branch and one PR. After Koray merges: check `git merge-base --is-ancestor <last commit> origin/main`, then `git switch main`, `git pull --ff-only`, `git branch -d <branch>`, then wait for his "devam". Give him a ready PR title and description in plain Turkish ("Ne değişti?" and "Nasıl denedim?") to paste.
 
 ## Workflow
 
