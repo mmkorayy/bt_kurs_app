@@ -1,0 +1,47 @@
+# Bookpal
+
+Danışan ve randevu takibi (öğrenme projesi). Giriş yapıp günlük, haftalık ve aylık randevuları ve danışanları görürsün.
+
+## Çalıştırma
+
+Terminalde sırayla (npm yoksa aşağıdaki komutlar `node` ile çalışır):
+
+**1. Ön yüzü derle** (ön yüz kodu değişince tekrar):
+
+```bash
+cd frontend
+node node_modules/vite/bin/vite.js build
+```
+
+**2. Sunucuyu başlat:**
+
+```bash
+cd ../backend
+node --env-file-if-exists=.env --import tsx src/server.ts
+```
+
+**3. Tarayıcıda aç:** http://localhost:3000
+
+Durdurmak için terminalde `Ctrl+C`. Sunucu kodu değişince Ctrl+C ile durdurup 2. adımı tekrar çalıştır.
+
+## Demo giriş
+
+| Kullanıcı | E-posta | Parola |
+|---|---|---|
+| Elif | `elif@bookpal.demo` | `demo-elif-123` |
+| Mert | `mert@bookpal.demo` | `demo-mert-123` |
+
+## Veritabanı
+
+- `backend/.env` yoksa veriler bellekte tutulur (sunucu kapanınca silinir).
+- `backend/.env` içinde `DATABASE_URL` varsa veriler Neon'da kalıcı olur. Şablon: `backend/.env.example`. İlk kurulumda tabloları kur: `cd backend && node --env-file-if-exists=.env --import tsx scripts/migrate.ts`.
+- Bağlantıyı denemek için: `node --env-file-if-exists=.env --import tsx scripts/db-check.ts` (`backend/` içinde).
+
+## Testler
+
+```bash
+cd frontend && node node_modules/vitest/vitest.mjs run
+cd backend && node --import tsx --test "src/**/*.test.ts"
+```
+
+API belgeleri sunucu çalışırken: http://localhost:3000/docs
