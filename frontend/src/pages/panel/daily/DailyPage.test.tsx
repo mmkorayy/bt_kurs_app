@@ -418,3 +418,37 @@ describe('dialogs, focus and busy states', () => {
     expect(screen.queryByText('Sunucu hatası.')).toBeNull();
   });
 });
+
+describe('end time follows the start time', () => {
+  function openForm() {
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [clientRecord(CAN)] } }),
+    });
+    openDaily();
+  }
+
+  test('picking a start time fills the end time one hour later, until the user sets the end time', async () => {
+    openForm();
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog');
+    const start = within(dialog).getByLabelText('Başlangıç') as HTMLInputElement;
+    const end = within(dialog).getByLabelText('Bitiş') as HTMLInputElement;
+    fireEvent.change(start, { target: { value: '09:30' } });
+    expect(end.value).toBe('10:30');
+    fireEvent.change(start, { target: { value: '11:00' } });
+    expect(end.value).toBe('12:00');
+    fireEvent.change(end, { target: { value: '11:45' } });
+    fireEvent.change(start, { target: { value: '13:00' } });
+    expect(end.value).toBe('11:45');
+  });
+
+  test('a start time late in the evening stops at 23:59', async () => {
+    openForm();
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Başlangıç'), { target: { value: '23:30' } });
+    expect((within(dialog).getByLabelText('Bitiş') as HTMLInputElement).value).toBe('23:59');
+  });
+});
