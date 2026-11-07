@@ -1,2 +1,4 @@
-// Ortak test ayarları buraya gelir (şimdilik boş).
-export {};
+// Her testten sonra taklit edilen global fetch geri alınır.
+afterEach(() => {
+  vi.unstubAllGlobals();
+});

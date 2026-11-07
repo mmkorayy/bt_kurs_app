@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import './Landing.css';
 import { SignupForm } from './SignupForm';
 
@@ -116,6 +117,7 @@ export function Landing() {
             <a href="#problem-solution">Sorun ve çözüm</a>
             <a href="#how-it-works">Nasıl çalışır</a>
             <a href="#early-access">Erken erişim</a>
+            <Link to="/giris">Giriş</Link>
           </nav>
         </div>
       </footer>
