@@ -1,0 +1,70 @@
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 16px;
+}
+
+.login-logo {
+  margin-bottom: 1.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--teal);
+  text-decoration: none;
+}
+.login-logo span { color: var(--terracotta); }
+
+.login-card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 24px rgba(43, 42, 42, 0.06);
+}
+.login-card h1 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+
+.login-field { margin-bottom: 1rem; }
+.login-field label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+.login-field input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--field-border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+
+.login-error {
+  margin: 0 0 1rem;
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+.login-submit {
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(194, 85, 45, 0.28);
+}
+.login-submit:hover { background: var(--terracotta-dark); }
+.login-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
