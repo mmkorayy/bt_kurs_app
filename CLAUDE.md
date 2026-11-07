@@ -30,8 +30,10 @@ Bookpal is a planned appointment and client-tracking app for people who see clie
 - The backend serves `frontend/dist` (`backend/src/static-dir.ts`): build the frontend first and restart the backend after a rebuild. Without a build the API still works and the server prints a hint; pages are a plain 404. Browser-side routes such as `/panel/hafta` return `index.html` (`backend/src/http/spa-fallback.ts`); missing files with an extension and `/api` misses stay 404.
 - Routes: `/` landing, `/giris` login, `/panel` (daily), `/panel/hafta`, `/panel/ay`, `/panel/danisanlar` (clients; ASCII URL, label "Danışanlar"). `/panel/*` sits behind `RequireAuth` (no session means `/giris`). Layout: `src/api/` (client, types, endpoints), `src/auth/`, `src/lib/`, `src/components/`, `src/pages/<screen>/`.
 - API calls go through `request()` in `src/api/client.ts` (throws `ApiError`; any 401 clears the session, except login and `/auth/me`, which pass `skipUnauthorized`). Tests render screens with `renderApp(<App />, { route })` and fake the network with `stubFetch({ 'GET /api/v1/…': () => ({ body }) })` from `src/test-utils.tsx` (an unmatched call fails the test). `types.test.ts` checks `src/api/types.ts` field names against `api-contract/openapi.yaml`.
-- Demo login for hand checks: see Backend (`elif@bookpal.demo`). Clients and the daily view are real pages; weekly and monthly are still placeholders until plan task 6. Frontend tests run in the Turkey time zone (`TZ=Europe/Istanbul` set in `vite.config.ts`) so day-shift bugs show up; date helpers are in `src/lib/date.ts` and the daily view reads `?tarih=YYYY-MM-DD` (a bad or missing value means today).
-- Keep temporary servers on spare ports and stop them by exact process ID (find it with `ss -ltnp`), not `pkill`.
+- Demo login for hand checks: see Backend (`elif@bookpal.demo`). All panel pages are real (daily, weekly, monthly, clients); the monthly view counts only non-cancelled appointments. Frontend tests run in the Turkey time zone (`TZ=Europe/Istanbul` set in `vite.config.ts`) so day-shift bugs show up; date helpers are in `src/lib/date.ts` and the daily view reads `?tarih=YYYY-MM-DD` (a bad or missing value means today).
+- Keep temporary servers on spare ports and stop them by exact process ID (find it with `ss -ltnp`), not `pkill`. Port 3128 is a proxy on this machine; 3123 to 3127 and 3139 worked.
+- Frontend tests use `fireEvent` and `.toBeTruthy()` (no `user-event`/`jest-dom`, not on the allowed list). Vitest runs with `css: false`, so layout bugs are invisible to tests: check phone width in the browser (`resize_window` 360, read `document.documentElement.scrollWidth`; a time input once overflowed a pop-up this way), then reset to desktop.
+- Hand-check recipe: log in as the demo user in the browser, then seed data with `fetch('/api/v1/...')` from page JS (same origin, the cookie is sent).
 
 ## Backend
 
@@ -57,6 +59,7 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 - Frontend work is test first (Vitest). Dates are `YYYY-MM-DD` text in local time; never `toISOString()` or `Date.parse` for them.
 - Backend work happens on a feature branch (`feat/...`) rather than straight on `main`.
 - Commit after each completed plan task, once its tests pass, on a feature branch (`feat/...`, `docs/...`). Koray allows Claude to push those branches (`github.com/mmkorayy/bt_kurs_app`). Never push `main`, never force-push, and never merge: Koray opens and merges the pull request himself (`gh` is not installed). If a push fails because of authentication, say so and let Koray push.
+- Each plan task is one branch and one PR. After Koray merges: `git switch main`, `git pull --ff-only`, `git branch -d <branch>`, then wait for his "devam". Give him a ready PR title and description in plain Turkish ("Ne değişti?" and "Nasıl denedim?") to paste.
 
 ## Workflow
 

@@ -6,6 +6,9 @@ const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
+/** Pazartesi'den başlayan kısa gün adları (hafta ve ay görünümleri). */
+export const WEEKDAYS_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export function toDateString(date: Date): string {
@@ -28,16 +31,20 @@ export function today(): string {
   return toDateString(new Date());
 }
 
-export function addDays(value: string, days: number): string {
+function mustParse(value: string): Date {
   const date = parseDate(value);
   if (!date) throw new Error(`Geçersiz tarih: ${value}`);
+  return date;
+}
+
+export function addDays(value: string, days: number): string {
+  const date = mustParse(value);
   return toDateString(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
 }
 
 /** "7 Kasım Cumartesi" */
 export function formatLong(value: string): string {
-  const date = parseDate(value);
-  if (!date) throw new Error(`Geçersiz tarih: ${value}`);
+  const date = mustParse(value);
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${WEEKDAYS[date.getDay()]}`;
 }
 
@@ -45,4 +52,63 @@ export function formatLong(value: string): string {
 export function dateFromQuery(value: string | null): string {
   if (value && parseDate(value)) return value;
   return today();
+}
+
+/** Verilen günün haftasının Pazartesi'si (hafta Pazartesi'den başlar). */
+export function weekStart(value: string): string {
+  const date = mustParse(value);
+  const daysSinceMonday = (date.getDay() + 6) % 7;
+  return addDays(value, -daysSinceMonday);
+}
+
+/** Pazartesi'den Pazar'a yedi gün. */
+export function weekDays(value: string): string[] {
+  const start = weekStart(value);
+  return Array.from({ length: 7 }, (_, index) => addDays(start, index));
+}
+
+/** Ayın ilk ve son günü. */
+export function monthRange(value: string): { from: string; to: string } {
+  const date = mustParse(value);
+  return {
+    from: toDateString(new Date(date.getFullYear(), date.getMonth(), 1)),
+    to: toDateString(new Date(date.getFullYear(), date.getMonth() + 1, 0)),
+  };
+}
+
+/** Ayı kapsayan Pazartesi'den başlayan haftalar; her satır 7 gün. */
+export function monthGrid(value: string): string[][] {
+  const { from, to } = monthRange(value);
+  const start = weekStart(from);
+  const end = weekDays(to)[6];
+  const rows: string[][] = [];
+  for (let rowStart = start; rowStart <= end; rowStart = addDays(rowStart, 7)) {
+    rows.push(weekDays(rowStart));
+  }
+  return rows;
+}
+
+/** `n` ay sonrasının (ya da öncesinin) ilk günü. */
+export function addMonths(value: string, months: number): string {
+  const date = mustParse(value);
+  return toDateString(new Date(date.getFullYear(), date.getMonth() + months, 1));
+}
+
+/** "Kasım 2026" */
+export function formatMonth(value: string): string {
+  const date = mustParse(value);
+  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** Haftanın Pazartesi–Pazar aralığı: "2 – 8 Kasım 2026", "26 Ekim – 1 Kasım 2026". */
+export function formatWeekRange(value: string): string {
+  const first = mustParse(weekStart(value));
+  const last = mustParse(addDays(weekStart(value), 6));
+  if (first.getFullYear() !== last.getFullYear()) {
+    return `${first.getDate()} ${MONTHS[first.getMonth()]} ${first.getFullYear()} – ${last.getDate()} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+  }
+  if (first.getMonth() !== last.getMonth()) {
+    return `${first.getDate()} ${MONTHS[first.getMonth()]} – ${last.getDate()} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+  }
+  return `${first.getDate()} – ${last.getDate()} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
 }
