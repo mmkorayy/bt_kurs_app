@@ -119,13 +119,28 @@ test('the arrows move one week and "Bu hafta" returns to this week', async () =>
   expect(await screen.findByRole('heading', { level: 1, name: '26 Ekim – 1 Kasım 2026' })).toBeTruthy();
 });
 
-test.each(['?tarih=abc', '?tarih=2026-13-45', ''])('a bad or missing date (%j) shows the current week', async (query) => {
+test.each(['?tarih=abc', '?tarih=2026-13-45', '', '?tarih=0226-11-07', '?tarih=9999-12-31'])('a bad or missing date (%j) shows the current week', async (query) => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(2026, 10, 8, 0, 30)); // Pazar gece yarısından sonra
   stubFetch({ [ME]: me, [WEEK]: () => ({ body: { appointments: [MON] } }) });
   openWeekly(query);
   expect(await screen.findByText('Elif Yıldız')).toBeTruthy();
   expect(screen.getByRole('heading', { level: 1, name: '2 – 8 Kasım 2026' })).toBeTruthy();
+});
+
+test('while the next week is loading, the old week is not shown under the new heading', async () => {
+  stubFetch({
+    [ME]: me,
+    [WEEK]: () => ({ body: { appointments: [MON] } }),
+    [NEXT_WEEK]: () => new Promise(() => undefined),
+  });
+  openWeekly();
+  await screen.findByText('Elif Yıldız');
+  fireEvent.click(screen.getByRole('button', { name: 'Sonraki hafta' }));
+  expect(await screen.findByText('Hafta yükleniyor…')).toBeTruthy();
+  expect(screen.getByRole('heading', { level: 1, name: '9 – 15 Kasım 2026' })).toBeTruthy();
+  expect(screen.queryByText('Elif Yıldız')).toBeNull();
+  expect(screen.queryByText('Bu hafta için randevu yok')).toBeNull();
 });
 
 test('shows a loading text', async () => {

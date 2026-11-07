@@ -185,3 +185,40 @@ describe('formatMonth and formatWeekRange', () => {
     expect(formatWeekRange('2026-12-31')).toBe('28 Aralık 2026 – 3 Ocak 2027');
   });
 });
+
+describe('extreme years never crash the views', () => {
+  test.each(['0100-01-05', '0226-11-07', '0999-06-10', '1899-12-31', '2101-01-01', '9999-12-31'])(
+    'parseDate rejects %s (outside 1900-2100)',
+    (value) => {
+      expect(parseDate(value)).toBeUndefined();
+    },
+  );
+
+  test.each(['1900-01-01', '2100-12-31'])('parseDate still accepts the edge %s', (value) => {
+    expect(parseDate(value)).toBeDefined();
+  });
+
+  test.each(['0226-11-07', '9999-12-31', '1900-06-01', '2100-06-01', '1899-12-31'])(
+    'dateFromQuery(%s) falls back to today',
+    (value) => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 7, 10, 0));
+      expect(dateFromQuery(value)).toBe('2026-11-07');
+    },
+  );
+
+  test.each(['1901-01-01', '2099-12-31'])('dateFromQuery keeps the edge %s', (value) => {
+    expect(dateFromQuery(value)).toBe(value);
+  });
+
+  test.each(['1901-01-15', '2099-12-15'])('the month grid and week of %s can be formatted without throwing', (value) => {
+    for (const day of monthGrid(value).flat()) expect(() => formatLong(day)).not.toThrow();
+    for (const day of weekDays(value)) expect(() => formatLong(day)).not.toThrow();
+    expect(() => formatWeekRange(value)).not.toThrow();
+    expect(() => formatMonth(value)).not.toThrow();
+  });
+
+  test('toDateString pads years below 1000 to four digits', () => {
+    expect(toDateString(new Date(900, 0, 1))).toBe('0900-01-01');
+  });
+});

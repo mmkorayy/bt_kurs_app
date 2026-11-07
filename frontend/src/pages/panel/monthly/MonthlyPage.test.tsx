@@ -96,13 +96,28 @@ test('the arrows move one month and "Bu ay" returns to this month', async () => 
   expect(await screen.findByRole('link', { name: '9 Kasım Pazartesi, 1 randevu' })).toBeTruthy();
 });
 
-test.each(['?tarih=abc', '?tarih=2026-13-45', ''])('a bad or missing date (%j) shows the current month', async (query) => {
+test.each(['?tarih=abc', '?tarih=2026-13-45', '', '?tarih=0226-11-07', '?tarih=9999-12-31'])('a bad or missing date (%j) shows the current month', async (query) => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(2026, 10, 1, 0, 30));
   stubFetch({ [ME]: me, [NOVEMBER]: () => ({ body: { appointments: LIST } }) });
   openMonthly(query);
   expect(await screen.findByRole('link', { name: '7 Kasım Cumartesi, 2 randevu' })).toBeTruthy();
   expect(screen.getByRole('heading', { level: 1, name: 'Kasım 2026' })).toBeTruthy();
+});
+
+test('while the next month is loading, the old month is not shown under the new heading', async () => {
+  stubFetch({
+    [ME]: me,
+    [NOVEMBER]: () => ({ body: { appointments: LIST } }),
+    [DECEMBER]: () => new Promise(() => undefined),
+  });
+  openMonthly();
+  await screen.findByRole('link', { name: '7 Kasım Cumartesi, 2 randevu' });
+  fireEvent.click(screen.getByRole('button', { name: 'Sonraki ay' }));
+  expect(await screen.findByText('Ay yükleniyor…')).toBeTruthy();
+  expect(screen.getByRole('heading', { level: 1, name: 'Aralık 2026' })).toBeTruthy();
+  expect(screen.queryByRole('link', { name: '7 Kasım Cumartesi, 2 randevu' })).toBeNull();
+  expect(screen.queryByText('Bu ay için randevu yok')).toBeNull();
 });
 
 test('shows a loading text', async () => {

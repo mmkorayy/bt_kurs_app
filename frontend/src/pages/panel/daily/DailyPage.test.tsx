@@ -89,13 +89,28 @@ test('"Bugün" goes back to today', async () => {
   expect(await screen.findByText('Elif Yıldız')).toBeTruthy();
 });
 
-test.each(['?tarih=abc', '?tarih=2026-13-45', '?tarih=', ''])('a bad or missing date (%j) falls back to today', async (query) => {
+test.each(['?tarih=abc', '?tarih=2026-13-45', '?tarih=', '', '?tarih=0226-11-07', '?tarih=9999-12-31'])('a bad or missing date (%j) falls back to today', async (query) => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(2026, 10, 7, 0, 30));
   stubFetch({ [ME]: me, [DAY]: () => ({ body: { appointments: [A1] } }) });
   openDaily(query);
   expect(await screen.findByText('Elif Yıldız')).toBeTruthy();
   expect(screen.getByRole('heading', { level: 1, name: '7 Kasım Cumartesi' })).toBeTruthy();
+});
+
+test('while the next day is loading, the old day is not shown under the new date', async () => {
+  stubFetch({
+    [ME]: me,
+    [DAY]: () => ({ body: { appointments: [A1] } }),
+    [NEXT_DAY]: () => new Promise(() => undefined),
+  });
+  openDaily();
+  await screen.findByText('Elif Yıldız');
+  fireEvent.click(screen.getByRole('button', { name: 'Sonraki gün' }));
+  expect(await screen.findByText('Randevular yükleniyor…')).toBeTruthy();
+  expect(screen.getByRole('heading', { level: 1, name: '8 Kasım Pazar' })).toBeTruthy();
+  expect(screen.queryByText('Elif Yıldız')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Düzenle: Elif Yıldız' })).toBeNull();
 });
 
 test('shows a loading text', async () => {
@@ -178,6 +193,54 @@ describe('adding an appointment', () => {
       status: 'scheduled',
       note: 'Yeni',
     });
+  });
+});
+
+describe('the client picker in the form', () => {
+  test('a failed client list shows its message and "Yeniden dene" loads it again', async () => {
+    let calls = 0;
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => {
+        calls += 1;
+        return calls === 1
+          ? { status: 500, body: { error: { code: 'server_error', message: 'Danışan listesi yüklenemedi.' } } }
+          : { body: { clients: [clientRecord(CAN)] } };
+      },
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog', { name: 'Randevu ekle' });
+    expect(await within(dialog).findByText('Danışan listesi yüklenemedi.')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yeniden dene' }));
+    expect(await within(dialog).findByRole('option', { name: 'Can Demir' })).toBeTruthy();
+    expect(within(dialog).queryByText('Danışan listesi yüklenemedi.')).toBeNull();
+  });
+
+  test('with no clients at all the form points to the Danışanlar tab', async () => {
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [] } }),
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog', { name: 'Randevu ekle' });
+    expect(await within(dialog).findByText(/Danışanlar sekmesinden/)).toBeTruthy();
+  });
+
+  test('editing an appointment of a deleted client does not show the "no clients" hint', async () => {
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [A1] } }),
+      [CLIENTS]: () => ({ body: { clients: [] } }),
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'Düzenle: Elif Yıldız' }));
+    const dialog = screen.getByRole('dialog');
+    await within(dialog).findByRole('option', { name: 'Elif Yıldız (silinmiş)' });
+    expect(within(dialog).queryByText(/Danışanlar sekmesinden/)).toBeNull();
   });
 });
 

@@ -11,8 +11,12 @@ export const WEEKDAYS_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+/** Kabul edilen yıllar: 1900-2100 (komşu aylar/haftalar da bu aralıkta kalsın diye adresten yalnızca 1901-2099 okunur). */
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2100;
+
 export function toDateString(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return `${String(date.getFullYear()).padStart(4, '0')}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 /** Gerçek bir takvim günüyse yerel saatte gece yarısındaki Date'i, değilse undefined döndürür. */
@@ -22,6 +26,7 @@ export function parseDate(value: string): Date | undefined {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
+  if (year < MIN_YEAR || year > MAX_YEAR) return undefined;
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return undefined;
   return date;
@@ -48,9 +53,10 @@ export function formatLong(value: string): string {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${WEEKDAYS[date.getDay()]}`;
 }
 
-/** `?tarih=` değerini okur; yoksa ya da bozuksa bugünü verir. */
+/** `?tarih=` değerini okur; yoksa, bozuksa ya da 1901-2099 dışındaysa bugünü verir. */
 export function dateFromQuery(value: string | null): string {
-  if (value && parseDate(value)) return value;
+  const date = value ? parseDate(value) : undefined;
+  if (date && date.getFullYear() > MIN_YEAR && date.getFullYear() < MAX_YEAR) return value as string;
   return today();
 }
 
