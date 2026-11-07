@@ -48,6 +48,11 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    // Boş saatleri sunucu kontrol eder; ikisi de doluysa "HH:MM" metni sıralı karşılaştırılır.
+    if (startTime && endTime && endTime <= startTime) {
+      setError('Bitiş saati başlangıç saatinden sonra olmalıdır.');
+      return;
+    }
     setSaving(true);
     const values = { clientId, date, startTime, endTime, status, note };
     try {

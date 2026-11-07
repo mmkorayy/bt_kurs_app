@@ -452,3 +452,51 @@ describe('end time follows the start time', () => {
     expect((within(dialog).getByLabelText('Bitiş') as HTMLInputElement).value).toBe('23:59');
   });
 });
+
+describe('end time must come after the start time', () => {
+  function openFilledForm() {
+    const stub = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [clientRecord(CAN)] } }),
+      'POST /api/v1/appointments': () => ({ status: 201, body: { appointment: appointment({ client: CAN }) } }),
+    });
+    openDaily();
+    return stub;
+  }
+
+  async function fillForm(start: string, end: string) {
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog');
+    await within(dialog).findByRole('option', { name: 'Can Demir' });
+    fireEvent.change(within(dialog).getByLabelText('Danışan'), { target: { value: 'c2' } });
+    fireEvent.change(within(dialog).getByLabelText('Başlangıç'), { target: { value: start } });
+    fireEvent.change(within(dialog).getByLabelText('Bitiş'), { target: { value: end } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    return dialog;
+  }
+
+  test.each([
+    ['earlier', '10:00', '09:00'],
+    ['equal', '10:00', '10:00'],
+  ])('an end time %s than the start shows a message and sends nothing', async (_name, start, end) => {
+    const { calls } = openFilledForm();
+    const dialog = await fillForm(start, end);
+    expect((await within(dialog).findByRole('alert')).textContent).toBe(
+      'Bitiş saati başlangıç saatinden sonra olmalıdır.',
+    );
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect((within(dialog).getByRole('button', { name: 'Kaydet' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  test('fixing the end time clears the message and saves', async () => {
+    const { calls } = openFilledForm();
+    const dialog = await fillForm('10:00', '09:00');
+    await within(dialog).findByRole('alert');
+    fireEvent.change(within(dialog).getByLabelText('Bitiş'), { target: { value: '11:00' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1);
+  });
+});
