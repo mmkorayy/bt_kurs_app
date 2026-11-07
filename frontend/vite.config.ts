@@ -12,6 +12,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Testler Türkiye saatinde çalışır: tarih kayması hataları UTC+3'te ortaya çıkar.
+    env: { TZ: 'Europe/Istanbul' },
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test-setup.ts',
