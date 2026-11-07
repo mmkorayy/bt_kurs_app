@@ -65,4 +65,6 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 
 ## Workflow
 
+- `README.md` is for Koray (very short, plain Turkish). Keep its "Kullanılan teknolojiler" section and the run commands up to date whenever a language, library, service or run/build command is added, changed or removed. Koray allowed committing README updates straight to `main` (and pushing that commit); everything else still goes through a branch and PR.
+
 Larger work goes brainstorm, then a design doc in `docs/superpowers/specs/`, then a plan in `docs/superpowers/plans/`, then the build, using the `superpowers` plugin.

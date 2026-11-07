@@ -24,6 +24,15 @@ node --env-file-if-exists=.env --import tsx src/server.ts
 
 Durdurmak için terminalde `Ctrl+C`. Sunucu kodu değişince Ctrl+C ile durdurup 2. adımı tekrar çalıştır.
 
+## Kullanılan teknolojiler
+
+- **Diller:** TypeScript (ön yüz ve backend), SQL (veritabanı tabloları), CSS ve HTML.
+- **Ön yüz (`frontend/`):** React 19 (ekranlar), Vite (derleme), react-router (sayfalar arası geçiş), Vitest + Testing Library (testler), düz CSS.
+- **Backend (`backend/`):** Node.js 24 ve Express 5 (web sunucusu), `pg` (PostgreSQL ile konuşur, düz SQL, ORM yok), Swagger UI (`/docs` API belgeleri), Node'un kendi test aracı + tsx (testler).
+- **Veritabanı:** Neon (ücretsiz bulut PostgreSQL). `DATABASE_URL` boşsa veriler bellekte tutulur.
+- **Araçlar:** Git ve GitHub, Claude Code (superpowers eklentisi).
+- Backend, derlenmiş ön yüzü de sunar: tek sunucu tüm siteyi verir.
+
 ## Demo giriş
 
 | Kullanıcı | E-posta | Parola |
