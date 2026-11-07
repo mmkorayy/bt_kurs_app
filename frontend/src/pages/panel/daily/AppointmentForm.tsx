@@ -17,6 +17,14 @@ interface AppointmentFormProps {
   onClose: () => void;
 }
 
+/** "09:30" -> "10:30"; gün sonunu aşarsa "23:59". */
+function oneHourLater(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return '';
+  if (hours + 1 > 23) return '23:59';
+  return `${String(hours + 1).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: AppointmentFormProps) {
   const clientsResult = useApi(() => listClients(), []);
   const clients = clientsResult.data ?? [];
@@ -25,6 +33,8 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
   const [date, setDate] = useState(appointment?.date ?? defaultDate);
   const [startTime, setStartTime] = useState(appointment?.startTime ?? '');
   const [endTime, setEndTime] = useState(appointment?.endTime ?? '');
+  // Bitişi kullanıcı yazdıysa (ya da kayıtlı randevuysa) başlangıç değişince ezilmez.
+  const [endTouched, setEndTouched] = useState(appointment !== undefined);
   const [status, setStatus] = useState<AppointmentStatus>(appointment?.status ?? 'scheduled');
   const [note, setNote] = useState(appointment?.note ?? '');
   const [error, setError] = useState('');
@@ -96,12 +106,19 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
               id="appointment-start"
               type="time"
               value={startTime}
-              onChange={(event) => setStartTime(event.target.value)}
+              onChange={(event) => {
+                setStartTime(event.target.value);
+                if (!endTouched) setEndTime(oneHourLater(event.target.value));
+              }}
             />
           </div>
           <div className="appointment-form-field">
             <label htmlFor="appointment-end">Bitiş</label>
-            <input id="appointment-end" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} />
+            <input id="appointment-end" type="time" value={endTime} onChange={(event) => {
+                setEndTime(event.target.value);
+                setEndTouched(true);
+              }}
+            />
           </div>
         </div>
         <div className="appointment-form-field">
