@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { addDays, dateFromQuery, formatLong, today } from '../../../lib/date';
 import { statusLabel } from '../../../lib/labels';
 import { useApi } from '../../../lib/useApi';
+import { useDocumentTitle } from '../../../lib/useDocumentTitle';
 import { AppointmentForm } from './AppointmentForm';
 import './DailyPage.css';
 
@@ -17,6 +18,7 @@ function clientName(appointment: AppointmentView): string {
 export function DailyPage() {
   const [params, setParams] = useSearchParams();
   const date = dateFromQuery(params.get('tarih'));
+  useDocumentTitle(formatLong(date));
   const { data: appointments, loading, error, reload } = useApi(() => listAppointments(date, date), [date]);
 
   const [editing, setEditing] = useState<AppointmentView | 'new' | null>(null);

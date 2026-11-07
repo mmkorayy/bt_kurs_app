@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { formatShortDate, genderLabel } from '../../../lib/labels';
 import { useApi } from '../../../lib/useApi';
 import { useDebouncedValue } from '../../../lib/useDebouncedValue';
+import { useDocumentTitle } from '../../../lib/useDocumentTitle';
 import { ClientForm } from './ClientForm';
 import './ClientsPage.css';
 
@@ -16,6 +17,7 @@ function fullName(client: Client): string {
 }
 
 export function ClientsPage() {
+  useDocumentTitle('Danışanlar');
   const [search, setSearch] = useState('');
   const searchText = useDebouncedValue(search.trim(), SEARCH_DELAY_MS);
   const { data: clients, loading, error, reload } = useApi(() => listClients(searchText || undefined), [searchText]);

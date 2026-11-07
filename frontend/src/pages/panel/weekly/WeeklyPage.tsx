@@ -3,11 +3,13 @@ import { listAppointments } from '../../../api/appointments';
 import type { AppointmentView } from '../../../api/types';
 import { addDays, dateFromQuery, formatLong, formatWeekRange, today, weekDays, weekStart, WEEKDAYS_SHORT } from '../../../lib/date';
 import { useApi } from '../../../lib/useApi';
+import { useDocumentTitle } from '../../../lib/useDocumentTitle';
 import './WeeklyPage.css';
 
 export function WeeklyPage() {
   const [params, setParams] = useSearchParams();
   const anchor = dateFromQuery(params.get('tarih'));
+  useDocumentTitle(formatWeekRange(anchor));
   const days = weekDays(anchor);
   const monday = days[0];
   const sunday = days[6];
