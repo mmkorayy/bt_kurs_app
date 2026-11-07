@@ -30,6 +30,7 @@ Durdurmak için terminalde `Ctrl+C`. Sunucu kodu değişince Ctrl+C ile durdurup
 - **Ön yüz (`frontend/`):** React 19 (ekranlar), Vite (derleme), react-router (sayfalar arası geçiş), Vitest + Testing Library (testler), düz CSS.
 - **Backend (`backend/`):** Node.js 24 ve Express 5 (web sunucusu), `pg` (PostgreSQL ile konuşur, düz SQL, ORM yok), Swagger UI (`/docs` API belgeleri), Node'un kendi test aracı + tsx (testler).
 - **Veritabanı:** Neon (ücretsiz bulut PostgreSQL). `DATABASE_URL` boşsa veriler bellekte tutulur.
+- **Yayın:** Render (ücretsiz web servisi, geçici test sitesi). GitHub'daki `main` dalından derlenir.
 - **Araçlar:** Git ve GitHub, Claude Code (superpowers eklentisi).
 - Backend, derlenmiş ön yüzü de sunar: tek sunucu tüm siteyi verir.
 
@@ -39,6 +40,10 @@ Durdurmak için terminalde `Ctrl+C`. Sunucu kodu değişince Ctrl+C ile durdurup
 |---|---|---|
 | Elif | `elif@bookpal.demo` | `demo-elif-123` |
 | Mert | `mert@bookpal.demo` | `demo-mert-123` |
+
+## Canlı test sitesi
+
+https://bookpal.onrender.com (Render'ın ücretsiz planı, geçici test için; yukarıdaki demo girişle açılır). 15 dakika kimse girmezse uyur, ilk açılış yaklaşık 1 dakika sürür. Kurulum adımları: `docs/render-deploy-guide.md`.
 
 ## Veritabanı
 
