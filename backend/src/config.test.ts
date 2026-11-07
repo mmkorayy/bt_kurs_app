@@ -2,8 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadConfig } from './config.js';
 
-test('defaults: port 3000, not production, demo accounts on', () => {
-  assert.deepEqual(loadConfig({}), { port: 3000, production: false, demoAccountsEnabled: true });
+test('defaults: port 3000, not production, demo accounts on, no database', () => {
+  assert.deepEqual(loadConfig({}), { port: 3000, production: false, demoAccountsEnabled: true, databaseUrl: undefined });
+});
+
+test('DATABASE_URL is trimmed and an empty or blank value means no database', () => {
+  assert.equal(loadConfig({ DATABASE_URL: '  postgres://u:p@h/db  ' }).databaseUrl, 'postgres://u:p@h/db');
+  assert.equal(loadConfig({ DATABASE_URL: '' }).databaseUrl, undefined);
+  assert.equal(loadConfig({ DATABASE_URL: '   ' }).databaseUrl, undefined);
 });
 
 test('PORT overrides the port and an invalid PORT falls back to 3000', () => {
