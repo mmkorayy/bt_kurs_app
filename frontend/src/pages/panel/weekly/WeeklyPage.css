@@ -10,6 +10,8 @@
   font-size: clamp(1.25rem, 4vw, 1.75rem);
 }
 .weekly-head button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.25rem 0.8rem;
   border: 1.5px solid var(--border);
   border-radius: 999px;
@@ -21,6 +23,7 @@
 
 .weekly-state { color: var(--muted); }
 .weekly-retry {
+  min-height: 2.75rem;
   padding: 0.5rem 1rem;
   border: 1.5px solid var(--field-border);
   border-radius: 999px;
@@ -47,7 +50,8 @@
 
 .weekly-day-link {
   display: flex;
-  align-items: baseline;
+  min-height: 2.75rem;
+  align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   color: var(--teal);

@@ -26,6 +26,9 @@
 }
 
 .panel-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
   color: var(--muted);
@@ -43,11 +46,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
   margin-left: auto;
   color: var(--muted);
 }
+.panel-user span { min-width: 0; overflow-wrap: anywhere; }
 
 .panel-logout {
+  min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   border: 1.5px solid var(--field-border);
   border-radius: 999px;

@@ -18,6 +18,8 @@
   font-size: clamp(1.25rem, 4vw, 1.75rem);
 }
 .daily-nav button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.25rem 0.8rem;
   border: 1.5px solid var(--border);
   border-radius: 999px;
@@ -28,6 +30,7 @@
 }
 
 .daily-add {
+  min-height: 2.75rem;
   padding: 0.6rem 1.25rem;
   border: 0;
   border-radius: 999px;
@@ -42,6 +45,7 @@
 
 .daily-state { color: var(--muted); }
 .daily-retry {
+  min-height: 2.75rem;
   padding: 0.5rem 1rem;
   border: 1.5px solid var(--field-border);
   border-radius: 999px;
@@ -88,10 +92,12 @@
   flex-direction: column;
   min-width: 0;
 }
+.daily-info strong { overflow-wrap: anywhere; }
 .daily-note {
   color: var(--muted);
   font-size: 0.875rem;
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
 .daily-status {
@@ -113,6 +119,7 @@
   gap: 0.5rem;
 }
 .daily-actions button {
+  min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   border: 1.5px solid var(--field-border);
   border-radius: 999px;
