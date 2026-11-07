@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Client } from '../../domain/types.js';
+import { clientRepositoryContract } from '../contract/client-repository.contract.js';
 import { MemoryClientRepository } from './client-repository.js';
 
 const client = (over: Partial<Client> = {}): Client => ({
@@ -36,3 +37,5 @@ test('update replaces the stored client', async () => {
   await repo.update(client({ lastName: 'Kaya' }));
   assert.equal((await repo.findById('u1', 'c1'))?.lastName, 'Kaya');
 });
+
+clientRepositoryContract('memory', async () => ({ repo: new MemoryClientRepository(), seedUser: async () => {} }));
