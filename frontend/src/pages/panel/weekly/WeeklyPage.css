@@ -1,0 +1,92 @@
+.weekly-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.weekly-head h1 {
+  margin: 0;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+}
+.weekly-head button {
+  padding: 0.25rem 0.8rem;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.weekly-state { color: var(--muted); }
+.weekly-retry {
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--field-border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Dar ekranda günler alt alta, geniş ekranda yedi sütun. */
+.weekly-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.weekly-day {
+  min-width: 0;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+}
+
+.weekly-day-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+}
+.weekly-day-link:hover { text-decoration: underline; }
+.weekly-day-number { font-size: 1.25rem; }
+.weekly-day-name { color: var(--muted); font-size: 0.875rem; }
+
+.weekly-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weekly-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 0.5rem;
+  margin-bottom: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.625rem;
+  background: var(--bg-to);
+  font-size: 0.875rem;
+}
+.weekly-time { font-weight: 700; color: var(--teal); }
+.weekly-name { min-width: 0; overflow-wrap: anywhere; }
+.weekly-item-off { background: var(--bg-from); color: var(--muted); }
+.weekly-item-off .weekly-name { text-decoration: line-through; }
+.weekly-badge {
+  color: var(--terracotta-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media (min-width: 64rem) {
+  .weekly-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .weekly-day { min-height: 8rem; }
+  .weekly-day-link { flex-direction: column; align-items: flex-start; gap: 0; }
+}

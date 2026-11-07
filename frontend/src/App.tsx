@@ -4,8 +4,9 @@ import { Landing } from './pages/landing/Landing';
 import { Login } from './pages/login/Login';
 import { ClientsPage } from './pages/panel/clients/ClientsPage';
 import { DailyPage } from './pages/panel/daily/DailyPage';
+import { MonthlyPage } from './pages/panel/monthly/MonthlyPage';
 import { PanelLayout } from './pages/panel/PanelLayout';
-import { Placeholder } from './pages/panel/Placeholder';
+import { WeeklyPage } from './pages/panel/weekly/WeeklyPage';
 
 export function App() {
   return (
@@ -15,8 +16,8 @@ export function App() {
       <Route path="/panel" element={<RequireAuth />}>
         <Route element={<PanelLayout />}>
           <Route index element={<DailyPage />} />
-          <Route path="hafta" element={<Placeholder title="Haftalık görünüm" />} />
-          <Route path="ay" element={<Placeholder title="Aylık görünüm" />} />
+          <Route path="hafta" element={<WeeklyPage />} />
+          <Route path="ay" element={<MonthlyPage />} />
           <Route path="danisanlar" element={<ClientsPage />} />
         </Route>
       </Route>
