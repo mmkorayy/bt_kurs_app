@@ -11,7 +11,8 @@ export function createSpaFallback(staticDir: string): express.RequestHandler {
   const indexFile = path.join(staticDir, 'index.html');
   return (req, res, next) => {
     const isRead = req.method === 'GET' || req.method === 'HEAD';
-    const reserved = req.path.startsWith('/api') || req.path.startsWith('/docs');
+    // Yalnızca tam /api ve /docs bölümleri ayrılmıştır; /apiary gibi yollar tarayıcı rotası olabilir.
+    const reserved = ['/api', '/docs'].some((prefix) => req.path === prefix || req.path.startsWith(`${prefix}/`));
     if (!isRead || reserved || path.extname(req.path) !== '') return next();
     if (!fs.existsSync(indexFile)) return next();
     res.sendFile(indexFile);
