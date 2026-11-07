@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Appointment } from '../../domain/types.js';
+import { appointmentRepositoryContract } from '../contract/appointment-repository.contract.js';
 import { MemoryAppointmentRepository } from './appointment-repository.js';
 
 const appt = (over: Partial<Appointment> = {}): Appointment => ({
@@ -76,3 +77,9 @@ test('delete removes the user own appointment and refuses another user', async (
   assert.equal(await repo.delete('u1', 'a1'), true);
   assert.equal(await repo.findById('u1', 'a1'), undefined);
 });
+
+appointmentRepositoryContract('memory', async () => ({
+  repo: new MemoryAppointmentRepository(),
+  seedUser: async () => {},
+  seedClient: async () => {},
+}));

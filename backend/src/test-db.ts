@@ -23,7 +23,7 @@ function directUrl(url: string): string {
   return parsed.toString();
 }
 
-export async function openTestDb(options: { migrate?: boolean } = {}): Promise<TestDb> {
+export async function openTestDb(options: { migrate?: boolean; max?: number } = {}): Promise<TestDb> {
   const url = directUrl(process.env.TEST_DATABASE_URL!.trim());
   const schema = `test_${randomBytes(6).toString('hex')}`;
 
@@ -35,7 +35,8 @@ export async function openTestDb(options: { migrate?: boolean } = {}): Promise<T
     await admin.end();
   }
 
-  const pool = createPool(url, { max: 1 });
+  // Varsayılan tek bağlantı; eşzamanlılık testleri `max` ile birden fazla bağlantı ister.
+  const pool = createPool(url, { max: options.max ?? 1 });
   pool.on('connect', (client) => {
     client.query(`SET search_path TO "${schema}", public`).catch(() => {});
   });
