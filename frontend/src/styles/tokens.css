@@ -1,0 +1,14 @@
+/* Renkler yalnızca buradan gelir. Beyaz üzerinde terracotta 4.53:1, --muted aynı nedenle #6b625c: açmayın. */
+:root {
+  --bg-from: #fdf1ea;
+  --bg-to: #eef6f5;
+  --teal: #2a7f7a;
+  --terracotta: #c2552d;
+  --terracotta-dark: #a8461f;
+  --fg: #2b2a2a;
+  --muted: #6b625c;
+  --surface: #ffffff;
+  --border: #e8d2c4;
+  --field-border: #8a8079;
+  --danger: #b3261e;
+}
