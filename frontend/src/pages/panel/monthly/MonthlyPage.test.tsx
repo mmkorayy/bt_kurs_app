@@ -53,8 +53,8 @@ test('asks once for the whole month and shows the number of active appointments 
 test('the grid starts on Monday, has seven weekday headings and dims days of other months', async () => {
   stubFetch({ [ME]: me, [NOVEMBER]: () => ({ body: { appointments: [] } }) });
   openMonthly();
-  await screen.findByRole('heading', { level: 1, name: 'Kasım 2026' });
-  const headings = screen.getAllByRole('columnheader').map((h) => h.textContent);
+  // Başlık yüklenirken de görünür; tablo yalnızca veri gelince çizilir, onu bekle.
+  const headings = (await screen.findAllByRole('columnheader')).map((h) => h.textContent);
   expect(headings).toEqual(['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']);
   const cells = screen.getAllByRole('cell');
   expect(cells).toHaveLength(42);
