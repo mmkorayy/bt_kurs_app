@@ -1,0 +1,43 @@
+.landing-field { margin-bottom: 1rem; }
+.landing-field label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+.landing-field input,
+.landing-field select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--field-border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+.landing-field [aria-invalid="true"] { border-color: var(--danger); }
+
+.landing-card .landing-field-error,
+.landing-card .landing-form-error {
+  margin: 0.25rem 0 0;
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+.landing-card .landing-form-error { margin-bottom: 1rem; }
+
+button.landing-cta {
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.landing-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.landing-card .landing-privacy {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+#signup-success { margin-top: 1.5rem; }

@@ -4,39 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Bookpal is a planned appointment and client-tracking app for people who see clients one-on-one (coaches, psychologists, psychiatrists, consultants). It is a learning project that follows the teacher's Ritma course (`../ritma-for-individual`, read-only reference). There is a landing page in `web/` (being moved into the new React app in `frontend/`) and an in-memory API in `backend/`. The panel screens are being built in `frontend/` step by step; spec `docs/superpowers/specs/2026-11-07-bookpal-frontend-design.md`, plan `docs/superpowers/plans/2026-11-07-bookpal-frontend.md`. All text visitors read is Turkish.
+Bookpal is a planned appointment and client-tracking app for people who see clients one-on-one (coaches, psychologists, psychiatrists, consultants). It is a learning project that follows the teacher's Ritma course (`../ritma-for-individual`, read-only reference). The landing page lives in the React app in `frontend/` (moved from the old plain-HTML `web/` folder, now deleted) and there is an in-memory API in `backend/`. The panel screens are being built in `frontend/` step by step; spec `docs/superpowers/specs/2026-11-07-bookpal-frontend-design.md`, plan `docs/superpowers/plans/2026-11-07-bookpal-frontend.md`. All text visitors read is Turkish.
 
 ## Stack and layout
 
-- New frontend (`frontend/`): React + TypeScript + Vite with Vitest, its own `package.json`. Only the libraries on the allowed list (see Rules) may be added. Colours come from `frontend/src/styles/tokens.css`; styles are plain CSS in separate files next to each component.
-- Old landing page (`web/`, removed in plan task 2): plain HTML, CSS and JavaScript. No framework, library, build tool or package manager.
-- `web/index.html` (structure and text), `web/styles.css` (all styling), `web/script.js` (form logic).
+- Frontend (`frontend/`): React + TypeScript + Vite with Vitest, its own `package.json`. Only the libraries on the allowed list (see Rules) may be added. Colours come from `frontend/src/styles/tokens.css`; styles are plain CSS in separate files next to each component, with class names prefixed per component (`landing-…`).
+- Landing page: `frontend/src/pages/landing/` (`Landing.tsx` structure and text, `SignupForm.tsx`, `signup.ts` form logic, their `.css` and tests).
 - Backend (`backend/`): TypeScript, Node.js and Express 5, data in memory. `api-contract/openapi.yaml` describes the API.
 - `docs/superpowers/specs/` holds design docs, `docs/superpowers/plans/` holds implementation plans. `.superpowers/` is temporary working space (mockups, ledgers) and stays out of git.
 
 ## Design
 
 - Chosen look ("option J"): peach `#fdf1ea` to mint `#eef6f5` gradient, teal `#2a7f7a`, terracotta `#c2552d`, rounded pill buttons, soft shadows, serif logo. Light theme only.
-- All colors come from the `:root` variables in `web/styles.css`. White on terracotta is 4.53:1 and `--muted` is `#6b625c` for the same reason, so do not lighten them.
+- All colors come from the `:root` variables in `frontend/src/styles/tokens.css`. White on terracotta is 4.53:1 and `--muted` is `#6b625c` for the same reason, so do not lighten them.
 - Spec: `docs/superpowers/specs/2026-10-31-bookpal-landing-design.md`. Plan: `docs/superpowers/plans/2026-10-31-bookpal-landing.md`.
 
 ## Commands
 
-- View the page: run `python3 -m http.server 8000` inside `web/`, then open `http://localhost:8000`. The frontend has no build, lint or test command (see Backend below for the API).
-- `validateSignup` and `sendSignup` are global functions in `web/script.js`. The page wiring (`initSignupForm`) only runs when a `document` exists, so the two functions can be loaded in Node with `node:vm` and tested without a browser. Keep temporary check scripts out of the project (use the scratchpad).
-- To check the form by hand with a working or failing endpoint, temporarily change `FORM_ENDPOINT` and set it back to `""` afterwards.
+- View the page: build the frontend, start the backend, open `http://localhost:3000` (see the Frontend and Backend sections below), or run the Vite dev server on 5173.
+- `validateSignup` and `sendSignup` are plain exported functions in `frontend/src/pages/landing/signup.ts` with Vitest tests next to them. `SignupForm` takes an optional `endpoint` prop so tests can try a working or failing endpoint without changing `FORM_ENDPOINT`. Keep temporary check scripts out of the project (use the scratchpad).
 
 ## Frontend (`frontend/`)
 
 - `npm` is not installed; the snap npm installs: `node /snap/kf6-core22/43/usr/lib/node_modules/npm/bin/npm-cli.js install` (inside `frontend/`, ask Koray first). Without npm, from `frontend/`: tests `node node_modules/vitest/vitest.mjs run`, types `node node_modules/typescript/bin/tsc --noEmit`, build `node node_modules/vite/bin/vite.js build`, dev server `node node_modules/vite/bin/vite.js` (port 5173, proxies `/api` and `/docs` to the backend on 3000, so start the backend too).
-- The backend serves `frontend/dist` when it has an `index.html`, otherwise the old `web/`. The folder is chosen when the server starts (`backend/src/static-dir.ts`), so rebuild the frontend and restart the backend. Browser-side routes such as `/panel/hafta` return `index.html` (`backend/src/http/spa-fallback.ts`); missing files with an extension and `/api` misses stay 404.
+- The backend serves `frontend/dist` (`backend/src/static-dir.ts`): build the frontend first and restart the backend after a rebuild. Without a build the API still works and the server prints a hint; pages are a plain 404. Browser-side routes such as `/panel/hafta` return `index.html` (`backend/src/http/spa-fallback.ts`); missing files with an extension and `/api` misses stay 404.
 - Keep temporary servers on spare ports and stop them by exact process ID (find it with `ss -ltnp`), not `pkill`.
 
 ## Backend
 
 Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs/superpowers/plans/2026-11-01-bookpal-backend.md`. It mirrors the teacher's Ritma backend (clients are called `clients`, not `customers`).
 
-- Commands (inside `backend/`): `npm install` first (`node_modules` is not in git), `npm test` (Node's test runner with `tsx`), `npm run dev` (watch mode), `npm run build` (`dist/`), `npm start`. The server also serves `web/`: run `npm run dev`, open `http://localhost:3000` (`PORT` changes it).
+- Commands (inside `backend/`): `npm install` first (`node_modules` is not in git), `npm test` (Node's test runner with `tsx`), `npm run dev` (watch mode), `npm run build` (`dist/`), `npm start`. The server also serves the built frontend (`frontend/dist`): run `npm run dev`, open `http://localhost:3000` (`PORT` changes it).
 - API docs: with the server running, open `http://localhost:3000/docs` (Swagger UI from `swagger-ui-dist`, reads `api-contract/openapi.yaml`, so contract changes show up by themselves). Log in with `POST /auth/login` and later "Try it out" calls use the cookie, or paste the token into "Authorize". The route (`src/http/docs-routes.ts`, wired through `AppDeps.docs`) is not mounted when `NODE_ENV=production`.
 - `npm` is not installed on Koray's machine (only Node bundled with the balena tool). Installs were done with the npm inside a snap: `node /snap/kf6-core22/43/usr/lib/node_modules/npm/bin/npm-cli.js install`. Tests and the build run without npm: `node --import tsx --test "src/**/*.test.ts"` and `node node_modules/typescript/bin/tsc`.
 - One test file: `node --import tsx --test src/services/appointment-service.test.ts`.
@@ -51,7 +49,7 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 
 - File names, folder names, CSS classes and `id`s are English ASCII. Visible text is Turkish.
 - The page must work at 360px width with no horizontal scrolling, and the signup button must be visible on the first screen.
-- The form POSTs JSON to `FORM_ENDPOINT` at the top of `web/script.js`. While it is `""` the form shows an error and never shows success, so signups are not lost silently. Do not connect an external form service without asking first.
+- The form POSTs JSON to `FORM_ENDPOINT` at the top of `frontend/src/pages/landing/signup.ts`. While it is `""` the form shows an error and never shows success, so signups are not lost silently. Do not connect an external form service without asking first.
 - Do not add a framework or library without asking. Allowed without asking: backend Express, `swagger-ui-dist` and dev tools; frontend `react`, `react-dom`, `react-router` and, for development, `vite`, `@vitejs/plugin-react`, `typescript`, `vitest`, `@testing-library/react`, `jsdom`, `@types/react`, `@types/react-dom`. Anything else (Tailwind, UI kits, `@types/node`, YAML or date libraries) needs Koray's OK.
 - Frontend work is test first (Vitest). Dates are `YYYY-MM-DD` text in local time; never `toISOString()` or `Date.parse` for them.
 - Backend work happens on a feature branch (`feat/...`) rather than straight on `main`.
