@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Bookpal is a planned appointment and client-tracking app for people who see clients one-on-one (coaches, psychologists, psychiatrists, consultants). It is a learning project that follows the teacher's Ritma course (`../ritma-for-individual`, read-only reference). There is a landing page in `web/` and an in-memory API in `backend/` (no dashboard screens yet). All text visitors read is Turkish.
+Bookpal is a planned appointment and client-tracking app for people who see clients one-on-one (coaches, psychologists, psychiatrists, consultants). It is a learning project that follows the teacher's Ritma course (`../ritma-for-individual`, read-only reference). There is a landing page in `web/` (being moved into the new React app in `frontend/`) and an in-memory API in `backend/`. The panel screens are being built in `frontend/` step by step; spec `docs/superpowers/specs/2026-11-07-bookpal-frontend-design.md`, plan `docs/superpowers/plans/2026-11-07-bookpal-frontend.md`. All text visitors read is Turkish.
 
 ## Stack and layout
 
-- Frontend (`web/`): plain HTML, CSS and JavaScript. No framework, library, build tool or package manager.
+- New frontend (`frontend/`): React + TypeScript + Vite with Vitest, its own `package.json`. Only the libraries on the allowed list (see Rules) may be added. Colours come from `frontend/src/styles/tokens.css`; styles are plain CSS in separate files next to each component.
+- Old landing page (`web/`, removed in plan task 2): plain HTML, CSS and JavaScript. No framework, library, build tool or package manager.
 - `web/index.html` (structure and text), `web/styles.css` (all styling), `web/script.js` (form logic).
 - Backend (`backend/`): TypeScript, Node.js and Express 5, data in memory. `api-contract/openapi.yaml` describes the API.
 - `docs/superpowers/specs/` holds design docs, `docs/superpowers/plans/` holds implementation plans. `.superpowers/` is temporary working space (mockups, ledgers) and stays out of git.
@@ -24,6 +25,12 @@ Bookpal is a planned appointment and client-tracking app for people who see clie
 - View the page: run `python3 -m http.server 8000` inside `web/`, then open `http://localhost:8000`. The frontend has no build, lint or test command (see Backend below for the API).
 - `validateSignup` and `sendSignup` are global functions in `web/script.js`. The page wiring (`initSignupForm`) only runs when a `document` exists, so the two functions can be loaded in Node with `node:vm` and tested without a browser. Keep temporary check scripts out of the project (use the scratchpad).
 - To check the form by hand with a working or failing endpoint, temporarily change `FORM_ENDPOINT` and set it back to `""` afterwards.
+
+## Frontend (`frontend/`)
+
+- `npm` is not installed; the snap npm installs: `node /snap/kf6-core22/43/usr/lib/node_modules/npm/bin/npm-cli.js install` (inside `frontend/`, ask Koray first). Without npm, from `frontend/`: tests `node node_modules/vitest/vitest.mjs run`, types `node node_modules/typescript/bin/tsc --noEmit`, build `node node_modules/vite/bin/vite.js build`, dev server `node node_modules/vite/bin/vite.js` (port 5173, proxies `/api` and `/docs` to the backend on 3000, so start the backend too).
+- The backend serves `frontend/dist` when it has an `index.html`, otherwise the old `web/`. The folder is chosen when the server starts (`backend/src/static-dir.ts`), so rebuild the frontend and restart the backend. Browser-side routes such as `/panel/hafta` return `index.html` (`backend/src/http/spa-fallback.ts`); missing files with an extension and `/api` misses stay 404.
+- Keep temporary servers on spare ports and stop them by exact process ID (find it with `ss -ltnp`), not `pkill`.
 
 ## Backend
 
@@ -45,7 +52,8 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 - File names, folder names, CSS classes and `id`s are English ASCII. Visible text is Turkish.
 - The page must work at 360px width with no horizontal scrolling, and the signup button must be visible on the first screen.
 - The form POSTs JSON to `FORM_ENDPOINT` at the top of `web/script.js`. While it is `""` the form shows an error and never shows success, so signups are not lost silently. Do not connect an external form service without asking first.
-- Do not add a framework or library without asking (the backend uses only Express, `swagger-ui-dist` and dev tools).
+- Do not add a framework or library without asking. Allowed without asking: backend Express, `swagger-ui-dist` and dev tools; frontend `react`, `react-dom`, `react-router` and, for development, `vite`, `@vitejs/plugin-react`, `typescript`, `vitest`, `@testing-library/react`, `jsdom`, `@types/react`, `@types/react-dom`. Anything else (Tailwind, UI kits, `@types/node`, YAML or date libraries) needs Koray's OK.
+- Frontend work is test first (Vitest). Dates are `YYYY-MM-DD` text in local time; never `toISOString()` or `Date.parse` for them.
 - Backend work happens on a feature branch (`feat/...`) rather than straight on `main`.
 - Commit after each completed plan task, once its tests pass, on a feature branch (`feat/...`, `docs/...`). Koray allows Claude to push those branches (`github.com/mmkorayy/bt_kurs_app`). Never push `main`, never force-push, and never merge: Koray opens and merges the pull request himself (`gh` is not installed). If a push fails because of authentication, say so and let Koray push.
 
