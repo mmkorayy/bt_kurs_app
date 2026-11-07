@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
@@ -11,5 +12,8 @@ const specPath = path.resolve(import.meta.dirname, '../../api-contract/openapi.y
 
 createApp({ ...buildDeps(process.env), staticDir, docs: { specPath } }).listen(config.port, () => {
   console.log(`Bookpal http://localhost:${config.port} adresinde çalışıyor`);
+  if (!fs.existsSync(path.join(staticDir, 'index.html'))) {
+    console.log('Ön yüz derlenmemiş: sayfalar için önce frontend/ içinde derleme çalıştırın (API çalışmaya devam eder).');
+  }
   if (!config.production) console.log(`API belgeleri http://localhost:${config.port}/docs adresinde`);
 });

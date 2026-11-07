@@ -35,6 +35,14 @@ test('an unknown /api path stays a JSON 404', async (t) => {
   assert.equal(body.error.code, 'not_found');
 });
 
+test('without a built index.html a browser route is a plain 404, not a server error', async (t) => {
+  const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bookpal-empty-'));
+  const server = startTestServer(buildTestDeps({ staticDir: emptyDir }));
+  t.after(() => server.close());
+  const res = await fetch(`${server.baseUrl}/panel`);
+  assert.equal(res.status, 404);
+});
+
 test('/docs is not swallowed by the fallback', async (t) => {
   const server = startTestServer(buildTestDeps({ staticDir: makeStaticDir() }));
   t.after(() => server.close());

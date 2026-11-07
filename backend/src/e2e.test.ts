@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { buildDeps } from './deps.js';
 import { buildTestDeps, ELIF, MERT, startTestServer } from './test-support.js';
@@ -54,8 +56,9 @@ test('every protected route is 401 without a token and after logout', async (t) 
   assert.equal(after.status, 401);
 });
 
-test('the server also serves the web folder', async (t) => {
-  const staticDir = path.resolve(import.meta.dirname, '../../web');
+test('the server also serves the built frontend folder', async (t) => {
+  const staticDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bookpal-e2e-static-'));
+  fs.writeFileSync(path.join(staticDir, 'index.html'), '<!doctype html><title>Bookpal</title>');
   const server = startTestServer(buildTestDeps({ staticDir }));
   t.after(() => server.close());
   const res = await fetch(`${server.baseUrl}/`);
