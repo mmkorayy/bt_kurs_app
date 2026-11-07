@@ -1,0 +1,27 @@
+.appointment-form-field { margin-bottom: 1rem; }
+.appointment-form-field label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+.appointment-form-field input,
+.appointment-form-field select,
+.appointment-form-field textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--field-border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+.appointment-form-field textarea { resize: vertical; }
+
+.appointment-form-times {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 0.75rem;
+}
+/* Saat kutularının kendi en küçük genişliği dar ekranda sütunu taşırmasın. */
+.appointment-form-times .appointment-form-field { min-width: 0; }
+.appointment-form-times input { min-width: 0; }
