@@ -18,7 +18,7 @@ What Bookpal's code does on Render (checked in the code):
 |---|---|
 | Port | The server reads the `PORT` setting (`backend/src/config.ts`) and gives no host, so it listens on all addresses. Render sets `PORT` itself (default 10000). Do not set it. |
 | Health check | `GET /api/v1/health` answers `{"status":"ok"}` without a login. |
-| Production mode | Render sets `NODE_ENV=production` while the app runs (not while it builds). |
+| Production mode | Render sets `NODE_ENV=production` while the app runs **and while it builds**. A plain `npm ci` then skips dev packages (TypeScript, Vite), so the build command below asks for them with `--include=dev`. |
 | Demo accounts | Off by default in production. Bookpal has **only** demo accounts, so with them off nobody can log in. You must set `DEMO_ACCOUNTS_ENABLED=true` for the test. |
 | Swagger `/docs` | Off in production. A 404 there is correct. |
 | Login cookie | Marked `Secure` in production. That works because Render serves HTTPS. |
@@ -77,7 +77,7 @@ Never paste these addresses into chat, a document or a screenshot. They contain 
    | Branch | `main` |
    | Language | Node |
    | Root Directory | Leave empty (the repo root). The commands below use `cd`. **(Verify the field exists in the form.)** |
-   | Build Command | `cd frontend && npm ci && npm run build && cd ../backend && npm ci && npm run build` |
+   | Build Command | `cd frontend && npm ci --include=dev && npm run build && cd ../backend && npm ci --include=dev && npm run build` |
    | Start Command | `cd backend && npm start` |
    | Instance type | **Free** |
 
@@ -89,7 +89,7 @@ Never paste these addresses into chat, a document or a screenshot. They contain 
    - **Health Check Path** = `/api/v1/health`
 5. Click **Create Web Service**. Render starts the first build. Follow it on the service's **Deploys** page and in the logs.
 
-Why the build installs everything: Render sets `NODE_ENV=production` only while the app runs, so the build still gets TypeScript and Vite. If a build ever fails with `tsc: not found` or `vite: not found`, change both `npm ci` to `npm ci --include=dev`.
+Why both `npm ci` have `--include=dev`: the build needs TypeScript and Vite, which are dev packages, and Render builds with `NODE_ENV=production`, which makes `npm ci` skip them. Render's docs page on environment variables says `NODE_ENV` is "runtime only", but a real first deploy of the teacher's Ritma project (same layout as Bookpal) failed exactly this way: only 9 packages were installed and `tsc` stopped with `TS2688: Cannot find type definition file for 'vite/client'`. Leaving the flag out of either `npm ci` breaks the build.
 
 ---
 
@@ -145,7 +145,7 @@ Check with `/mcp` inside Claude Code.
 
 | Problem | Likely cause and fix |
 |---|---|
-| Build fails with `tsc: not found` / `vite: not found` | Use `npm ci --include=dev` in both places. |
+| Build fails in about 10 seconds with `tsc: not found`, `vite: not found` or `TS2688: Cannot find type definition file for 'vite/client'` | Dev packages were skipped. Both `npm ci` in the Build Command need `--include=dev` (frontend and backend). Change it under **Settings > Build Command** and redeploy. |
 | Page is a plain 404, log says `Ön yüz derlenmemiş` | The frontend build did not run. Check the Build Command. |
 | Deploy fails, log shows a database message | `DATABASE_URL` is wrong or missing `?sslmode=verify-full`. The server stops on purpose. Fix it in the dashboard (this redeploys). |
 | You cannot log in | `DEMO_ACCOUNTS_ENABLED=true` is missing, or the migration was never applied to this branch. |
