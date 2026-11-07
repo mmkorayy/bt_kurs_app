@@ -1,9 +1,18 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import './SignupForm.css';
 import { FORM_ENDPOINT, sendSignup, validateSignup, type SignupErrors, type SignupValues } from './signup';
 
 const NO_ENDPOINT_MESSAGE = 'Şu an kayıt alamıyoruz, lütfen daha sonra tekrar deneyin.';
 const NETWORK_MESSAGE = 'Kaydın gönderilemedi. İnternet bağlantını kontrol edip tekrar dene.';
+const SERVER_MESSAGE = 'Kaydın şu an alınamadı. Lütfen biraz sonra tekrar dene.';
+const TIMEOUT_MESSAGE = 'Sunucu zamanında yanıt vermedi. Lütfen tekrar dene.';
+
+const FAILURE_MESSAGES = {
+  no_endpoint: NO_ENDPOINT_MESSAGE,
+  network: NETWORK_MESSAGE,
+  server: SERVER_MESSAGE,
+  timeout: TIMEOUT_MESSAGE,
+};
 
 const FIELD_ORDER: (keyof SignupValues)[] = ['name', 'email', 'profession'];
 
@@ -22,6 +31,12 @@ export function SignupForm({ endpoint = FORM_ENDPOINT }: SignupFormProps) {
   const [formError, setFormError] = useState('');
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  const thanksRef = useRef<HTMLHeadingElement>(null);
+
+  // Form gizlenince odaklı düğme kaybolur; klavye odağı teşekkür başlığına taşınır.
+  useEffect(() => {
+    if (done) thanksRef.current?.focus();
+  }, [done]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +62,7 @@ export function SignupForm({ endpoint = FORM_ENDPOINT }: SignupFormProps) {
       setDone(true);
       return;
     }
-    setFormError(result.reason === 'no_endpoint' ? NO_ENDPOINT_MESSAGE : NETWORK_MESSAGE);
+    setFormError(FAILURE_MESSAGES[result.reason]);
     setSending(false);
   }
 
@@ -63,6 +78,7 @@ export function SignupForm({ endpoint = FORM_ENDPOINT }: SignupFormProps) {
             autoComplete="name"
             ref={nameRef}
             aria-invalid={errors.name ? 'true' : undefined}
+            aria-describedby={errors.name ? 'signup-name-error' : undefined}
           />
           <p id="signup-name-error" className="landing-field-error" role="alert">
             {errors.name}
@@ -77,6 +93,7 @@ export function SignupForm({ endpoint = FORM_ENDPOINT }: SignupFormProps) {
             autoComplete="email"
             ref={emailRef}
             aria-invalid={errors.email ? 'true' : undefined}
+            aria-describedby={errors.email ? 'signup-email-error' : undefined}
           />
           <p id="signup-email-error" className="landing-field-error" role="alert">
             {errors.email}
@@ -89,6 +106,7 @@ export function SignupForm({ endpoint = FORM_ENDPOINT }: SignupFormProps) {
             name="profession"
             ref={professionRef}
             aria-invalid={errors.profession ? 'true' : undefined}
+            aria-describedby={errors.profession ? 'signup-profession-error' : undefined}
           >
             <option value="">Mesleğini seç</option>
             <option>Koç</option>
@@ -112,7 +130,9 @@ export function SignupForm({ endpoint = FORM_ENDPOINT }: SignupFormProps) {
 
       <div id="signup-success" aria-live="polite">
         <div className="landing-card" hidden={!done}>
-          <h3>Teşekkürler!</h3>
+          <h3 ref={thanksRef} tabIndex={-1}>
+            Teşekkürler!
+          </h3>
           <p>Kaydın bize ulaştı. Bookpal hazır olduğunda sana haber vereceğiz.</p>
         </div>
       </div>
