@@ -22,7 +22,7 @@ Bookpal is a planned appointment and client-tracking app for people who see clie
 ## Commands
 
 - View the page: build the frontend, start the backend, open `http://localhost:3000` (see the Frontend and Backend sections below), or run the Vite dev server on 5173.
-- `validateSignup` and `sendSignup` are plain exported functions in `frontend/src/pages/landing/signup.ts` with Vitest tests next to them. `SignupForm` takes an optional `endpoint` prop so tests can try a working or failing endpoint without changing `FORM_ENDPOINT`. Keep temporary check scripts out of the project (use the scratchpad).
+- `validateSignup` and `sendSignup` are plain exported functions in `frontend/src/pages/landing/signup.ts` with Vitest tests next to them. `SignupForm` takes an optional `endpoint` prop so tests can try a working or failing endpoint without changing `FORM_ENDPOINT`. `sendSignup` gives up after `SEND_TIMEOUT_MS` (10 s) and returns a reason (`no_endpoint`, `network`, `server`, `timeout`), each with its own Turkish message in `SignupForm.tsx`. Keep temporary check scripts out of the project (use the scratchpad).
 
 ## Frontend (`frontend/`)
 
@@ -64,11 +64,3 @@ Spec: `docs/superpowers/specs/2026-11-01-bookpal-backend-design.md`. Plan: `docs
 ## Workflow
 
 Larger work goes brainstorm, then a design doc in `docs/superpowers/specs/`, then a plan in `docs/superpowers/plans/`, then the build, using the `superpowers` plugin.
-
-## Known gaps (deferred from the review of the first build)
-
-Fix these before a real endpoint is connected:
-- Error messages are not linked to their fields with `aria-describedby`.
-- After a successful signup, keyboard focus is lost because the focused button is hidden.
-- A server error (for example 500) shows the "check your internet" message.
-- The `fetch` has no timeout, so a server that never answers leaves the button disabled.
