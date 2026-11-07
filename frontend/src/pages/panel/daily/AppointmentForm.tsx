@@ -52,7 +52,8 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
   }
 
   return (
-    <Modal title={appointment ? 'Randevuyu düzenle' : 'Randevu ekle'} onClose={onClose}>
+    // Kayıt sürerken pencere kapatılamaz: kapansa da randevu kaydedilirdi.
+    <Modal title={appointment ? 'Randevuyu düzenle' : 'Randevu ekle'} onClose={saving ? () => undefined : onClose}>
       <form onSubmit={handleSubmit} noValidate>
         <div className="appointment-form-field">
           <label htmlFor="appointment-client">Danışan</label>
@@ -127,7 +128,7 @@ export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: 
           </p>
         )}
         <div className="modal-actions">
-          <button className="modal-secondary" type="button" onClick={onClose}>
+          <button className="modal-secondary" type="button" onClick={onClose} disabled={saving}>
             Vazgeç
           </button>
           <button className="modal-primary" type="submit" disabled={saving}>

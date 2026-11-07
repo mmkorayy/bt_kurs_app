@@ -7,7 +7,13 @@ interface ModalProps {
   children: ReactNode;
 }
 
-/** Sayfa içi pencere. Escape ve "Kapat" düğmesi kapatır; kapanınca odak açan düğmeye döner. */
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Sayfa içi pencere. Escape ve "Kapat" düğmesi kapatır. Tab pencerenin içinde döner (arkadaki sayfaya geçmez).
+ * Kapanınca odak açan düğmeye döner; ama sayfa odağı çoktan başka yere taşıdıysa (örn. silme sonrası başlık)
+ * odak geri alınmaz.
+ */
 export function Modal({ title, onClose, children }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -16,14 +22,42 @@ export function Modal({ title, onClose, children }: ModalProps) {
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
+    const dialog = dialogRef.current;
+    dialog?.focus();
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCloseRef.current();
+      if (event.key === 'Escape') {
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+      const items = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)];
+      if (items.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const inside = active instanceof Node && dialog.contains(active);
+      if (!inside) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && (active === first || active === dialog)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      opener?.focus();
+      const active = document.activeElement;
+      const focusLost = !active || active === document.body || (dialog !== null && dialog.contains(active));
+      if (focusLost && opener?.isConnected) opener.focus();
     };
   }, []);
 

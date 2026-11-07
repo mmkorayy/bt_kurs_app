@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ApiError } from '../../../api/client';
 import { deleteClient, listClients } from '../../../api/clients';
 import type { Client } from '../../../api/types';
@@ -24,6 +24,7 @@ export function ClientsPage() {
   const [deleting, setDeleting] = useState<Client | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const [deletingBusy, setDeletingBusy] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   async function confirmDelete() {
     if (!deleting) return;
@@ -33,6 +34,8 @@ export function ClientsPage() {
       await deleteClient(deleting.id);
       setDeleting(null);
       reload();
+      // Sil düğmesi satırla birlikte kaybolacağı için odak sayfa başlığına taşınır.
+      headingRef.current?.focus();
     } catch (failure) {
       setDeleteError(failure instanceof ApiError ? failure.message : 'Bir şeyler ters gitti.');
     } finally {
@@ -83,7 +86,9 @@ export function ClientsPage() {
   return (
     <section className="clients">
       <div className="clients-head">
-        <h1>Danışanlar</h1>
+        <h1 ref={headingRef} tabIndex={-1}>
+          Danışanlar
+        </h1>
         <button className="clients-add" type="button" onClick={() => setEditing('new')}>
           Danışan ekle
         </button>

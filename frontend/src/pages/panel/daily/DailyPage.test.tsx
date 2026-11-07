@@ -322,3 +322,99 @@ describe('changing an appointment', () => {
     expect(confirmSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('dialogs, focus and busy states', () => {
+  test('after a delete, keyboard focus moves to the page heading', async () => {
+    let lists = 0;
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => {
+        lists += 1;
+        return { body: { appointments: lists === 1 ? [A1] : [] } };
+      },
+      'DELETE /api/v1/appointments/a1': () => ({ status: 204 }),
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'Sil: Elif Yıldız' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sil' }));
+    expect(await screen.findByText('Bu gün için randevu yok')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
+  });
+
+  test('while a delete is on its way the dialog cannot be dismissed', async () => {
+    let release!: () => void;
+    const { calls } = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [A1] } }),
+      'DELETE /api/v1/appointments/a1': () => new Promise((resolve) => (release = () => resolve({ status: 204 }))),
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'Sil: Elif Yıldız' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Sil' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'DELETE')).toBe(true));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kapat' }));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect((within(dialog).getByRole('button', { name: 'Vazgeç' }) as HTMLButtonElement).disabled).toBe(true);
+    release();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  test('while an appointment is being saved the form cannot be closed', async () => {
+    let release!: () => void;
+    const created = appointment({ id: 'a3', client: CAN, startTime: '11:00', endTime: '12:00' });
+    const { calls } = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [clientRecord(CAN)] } }),
+      'POST /api/v1/appointments': () =>
+        new Promise((resolve) => (release = () => resolve({ status: 201, body: { appointment: created } }))),
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog', { name: 'Randevu ekle' });
+    await within(dialog).findByRole('option', { name: 'Can Demir' });
+    fireEvent.change(within(dialog).getByLabelText('Danışan'), { target: { value: 'c2' } });
+    fireEvent.change(within(dialog).getByLabelText('Başlangıç'), { target: { value: '11:00' } });
+    fireEvent.change(within(dialog).getByLabelText('Bitiş'), { target: { value: '12:00' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kapat' }));
+    expect(screen.getByRole('dialog', { name: 'Randevu ekle' })).toBeTruthy();
+    expect((within(dialog).getByRole('button', { name: 'Vazgeç' }) as HTMLButtonElement).disabled).toBe(true);
+    release();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  test('"İptal et" is disabled while it works', async () => {
+    let release!: () => void;
+    const cancelled = { ...A1, status: 'cancelled' as const };
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [A1] } }),
+      'PATCH /api/v1/appointments/a1': () => new Promise((resolve) => (release = () => resolve({ body: { appointment: cancelled } }))),
+    });
+    openDaily();
+    const button = (await screen.findByRole('button', { name: 'İptal et: Elif Yıldız' })) as HTMLButtonElement;
+    fireEvent.click(button);
+    await waitFor(() => expect(button.disabled).toBe(true));
+    release();
+  });
+
+  test('a failed cancel shows its message, and changing the day clears it', async () => {
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [A1] } }),
+      [NEXT_DAY]: () => ({ body: { appointments: [] } }),
+      'PATCH /api/v1/appointments/a1': () => ({ status: 500, body: { error: { code: 'server_error', message: 'Sunucu hatası.' } } }),
+    });
+    openDaily();
+    fireEvent.click(await screen.findByRole('button', { name: 'İptal et: Elif Yıldız' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('Sunucu hatası.');
+    fireEvent.click(screen.getByRole('button', { name: 'Sonraki gün' }));
+    await screen.findByText('Bu gün için randevu yok');
+    expect(screen.queryByText('Sunucu hatası.')).toBeNull();
+  });
+});

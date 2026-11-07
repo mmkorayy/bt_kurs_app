@@ -92,3 +92,6 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* Silme sonrası odak başlığa taşınır; salt okunur başlıkta odak halkası gösterilmez. */
+.clients h1:focus { outline: none; }
