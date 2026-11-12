@@ -5,6 +5,7 @@ import { Login } from './pages/login/Login';
 import { ClientsPage } from './pages/panel/clients/ClientsPage';
 import { DailyPage } from './pages/panel/daily/DailyPage';
 import { MonthlyPage } from './pages/panel/monthly/MonthlyPage';
+import { AppointmentsPage } from './pages/panel/appointments/AppointmentsPage';
 import { PanelLayout } from './pages/panel/PanelLayout';
 import { WeeklyPage } from './pages/panel/weekly/WeeklyPage';
 
@@ -18,6 +19,7 @@ export function App() {
           <Route index element={<DailyPage />} />
           <Route path="hafta" element={<WeeklyPage />} />
           <Route path="ay" element={<MonthlyPage />} />
+          <Route path="randevular" element={<AppointmentsPage />} />
           <Route path="danisanlar" element={<ClientsPage />} />
         </Route>
       </Route>

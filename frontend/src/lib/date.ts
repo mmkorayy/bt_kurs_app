@@ -118,3 +118,12 @@ export function formatWeekRange(value: string): string {
   }
   return `${first.getDate()} – ${last.getDate()} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
 }
+
+/** Randevuları veya öğeleri önce tarihe (artan), eşitse başlangıç saatine (artan) göre sıralar. */
+export function compareDateAndTime(
+  a: { date: string; startTime: string },
+  b: { date: string; startTime: string },
+): number {
+  return a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime);
+}
+
