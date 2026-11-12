@@ -1,6 +1,7 @@
 import {
   addDays,
   addMonths,
+  compareDateAndTime,
   dateFromQuery,
   formatLong,
   formatMonth,
@@ -220,5 +221,26 @@ describe('extreme years never crash the views', () => {
 
   test('toDateString pads years below 1000 to four digits', () => {
     expect(toDateString(new Date(900, 0, 1))).toBe('0900-01-01');
+  });
+
+  describe('compareDateAndTime', () => {
+    test('sorts by date first, then by startTime', () => {
+      const a = { date: '2026-11-03', startTime: '10:00' };
+      const b = { date: '2026-11-02', startTime: '15:00' };
+      const c = { date: '2026-11-02', startTime: '09:00' };
+      const d = { date: '2026-11-03', startTime: '09:00' };
+      const list = [a, b, c, d];
+      list.sort(compareDateAndTime);
+      expect(list).toEqual([c, b, d, a]);
+    });
+
+    test('returns 0 when date and startTime are identical', () => {
+      expect(
+        compareDateAndTime(
+          { date: '2026-11-02', startTime: '10:00' },
+          { date: '2026-11-02', startTime: '10:00' },
+        ),
+      ).toBe(0);
+    });
   });
 });

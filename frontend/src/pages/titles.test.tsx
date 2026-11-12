@@ -21,6 +21,7 @@ test.each([
   ['/panel?tarih=2026-11-07', '7 Kasım Cumartesi · Bookpal'],
   ['/panel/hafta?tarih=2026-11-07', '2 – 8 Kasım 2026 · Bookpal'],
   ['/panel/ay?tarih=2026-11-07', 'Kasım 2026 · Bookpal'],
+  ['/panel/randevular?tarih=2026-11-07', 'Randevular · Bookpal'],
   ['/panel/danisanlar', 'Danışanlar · Bookpal'],
 ])('the tab title of %s is %s', async (route, title) => {
   stubPanel();

@@ -1,0 +1,171 @@
+.appointments {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 54rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.appointments-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.appointments-head h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  min-width: 13rem;
+  text-align: center;
+}
+
+.appointments-head button {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border, #e5ded8);
+  background: var(--surface, #ffffff);
+  color: var(--text, #2a2523);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.appointments-head button:hover {
+  border-color: var(--accent, #2a7f7a);
+  color: var(--accent, #2a7f7a);
+}
+
+.appointments-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted, #6b625c);
+  font-size: 1rem;
+}
+
+.appointments-retry {
+  display: inline-block;
+  margin-top: 1rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  border: none;
+  background: var(--accent, #2a7f7a);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.appointments-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.appointments-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e5ded8);
+  border-radius: var(--radius, 1rem);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  gap: 1rem;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Bugün olan randevuların vurgusu */
+.appointments-item-today {
+  border-color: var(--accent, #2a7f7a);
+  background: var(--glow, #f2f8f7);
+  box-shadow: 0 2px 8px rgba(42, 127, 122, 0.12);
+}
+
+.appointments-item-off {
+  opacity: 0.6;
+}
+
+.appointments-time-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 9rem;
+}
+
+.appointments-date-link {
+  font-weight: 700;
+  color: var(--text, #2a2523);
+  text-decoration: none;
+}
+
+.appointments-date-link:hover {
+  color: var(--accent, #2a7f7a);
+  text-decoration: underline;
+}
+
+.appointments-time {
+  font-size: 0.85rem;
+  color: var(--muted, #6b625c);
+}
+
+.appointments-client-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.appointments-client-name {
+  font-weight: 600;
+  color: var(--text, #2a2523);
+}
+
+.appointments-note {
+  font-size: 0.85rem;
+  color: var(--muted, #6b625c);
+}
+
+.appointments-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.appointments-today-badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: var(--accent, #2a7f7a);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.appointments-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--muted, #6b625c);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .appointments-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .appointments-badges {
+    align-self: flex-start;
+  }
+}
