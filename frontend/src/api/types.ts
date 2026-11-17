@@ -44,3 +44,33 @@ export interface AppointmentView extends Required<AppointmentInput> {
   userId: string;
   client: { id: string; firstName: string; lastName: string };
 }
+
+export const REMINDER_MINUTES = [15, 30, 60] as const;
+export type ReminderMinutes = (typeof REMINDER_MINUTES)[number];
+
+/** Yapay zekâ asistanının cümleden çıkardığı taslak; hiçbir şey kaydedilmiş değildir. */
+export interface AppointmentDraft {
+  /** Danışan kayıtlıysa id'si, değilse null. */
+  clientId: string | null;
+  /** Danışan kayıtlı değilse cümlede geçen ad ve soyad. */
+  suggestedClient: { firstName: string; lastName: string } | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  note: string;
+}
+
+export interface ReminderSettings {
+  /** null: hatırlatmalar kapalı. */
+  reminderMinutesBefore: ReminderMinutes | null;
+}
+
+export interface ReminderNotification {
+  id: string;
+  userId: string;
+  appointmentId: string;
+  recipientEmail: string;
+  subject: string;
+  body: string;
+  sentAt: string;
+}

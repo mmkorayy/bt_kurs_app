@@ -2,10 +2,13 @@ import spec from '../../../api-contract/openapi.yaml?raw';
 import {
   APPOINTMENT_STATUSES,
   GENDERS,
+  type AppointmentDraft,
   type AppointmentInput,
   type AppointmentView,
   type Client,
   type ClientInput,
+  type ReminderNotification,
+  type ReminderSettings,
   type User,
 } from './types';
 
@@ -37,6 +40,24 @@ const appointmentViewFields: Record<keyof AppointmentView, true> = {
   id: true,
   userId: true,
   client: true,
+};
+const appointmentDraftFields: Record<keyof AppointmentDraft, true> = {
+  clientId: true,
+  suggestedClient: true,
+  date: true,
+  startTime: true,
+  endTime: true,
+  note: true,
+};
+const reminderSettingsFields: Record<keyof ReminderSettings, true> = { reminderMinutesBefore: true };
+const reminderNotificationFields: Record<keyof ReminderNotification, true> = {
+  id: true,
+  userId: true,
+  appointmentId: true,
+  recipientEmail: true,
+  subject: true,
+  body: true,
+  sentAt: true,
 };
 
 const lines = spec.split('\n');
@@ -82,6 +103,13 @@ test('AppointmentInput fields exist in the contract', () =>
   expectFieldsInSchemas(appointmentInputFields, ['AppointmentInput']));
 test('AppointmentView fields exist in the contract', () =>
   expectFieldsInSchemas(appointmentViewFields, ['AppointmentInput', 'AppointmentView']));
+
+test('AppointmentDraft fields exist in the contract', () =>
+  expectFieldsInSchemas(appointmentDraftFields, ['AppointmentDraft']));
+test('ReminderSettings fields exist in the contract', () =>
+  expectFieldsInSchemas(reminderSettingsFields, ['ReminderSettings']));
+test('ReminderNotification fields exist in the contract', () =>
+  expectFieldsInSchemas(reminderNotificationFields, ['ReminderNotification']));
 
 test('the client name inside an appointment has id, firstName and lastName in the contract', () => {
   const names = propertyNames('AppointmentView');
