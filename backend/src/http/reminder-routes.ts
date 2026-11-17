@@ -43,7 +43,8 @@ export function createReminderRoutes(deps: AppDeps): Router {
 
   router.get('/reminders/sent', auth, async (req, res, next) => {
     try {
-      const limit = Number(req.query.limit) || 50;
+      const raw = Number(req.query.limit);
+      const limit = Number.isInteger(raw) && raw >= 1 ? Math.min(raw, 100) : 50;
       const list = await deps.reminders.listSent(req.user!.id, limit);
       res.status(200).json({ notifications: list });
     } catch (err) {

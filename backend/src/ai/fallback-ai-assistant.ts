@@ -79,7 +79,9 @@ export class FallbackAiAssistant implements AiAssistant {
 
     if (!clientId) {
       // Cümlede geçen iki kelimelik büyük harfli ad-soyad adayını arayalım
-      const nameMatch = text.match(/\b([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\s+([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\b/);
+      // Gün adları büyük harfle başlayabilir ("Pazartesi Ali Veli"): ad adayı sayılmaz.
+      const withoutDays = text.replace(/\b(Pazartesi|Salı|Çarşamba|Perşembe|Cuma|Cumartesi|Pazar|Yarın|Bugün)\b/g, ' ');
+      const nameMatch = withoutDays.match(/\b([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\s+([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\b/);
       if (nameMatch) {
         suggestedClient = { firstName: nameMatch[1], lastName: nameMatch[2] };
         matchedClientName = `${nameMatch[1]} ${nameMatch[2]}`.toLocaleLowerCase('tr-TR');

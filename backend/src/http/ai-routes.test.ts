@@ -97,3 +97,13 @@ test('a draft naming a client that is not the user own is cleaned before it is r
   assert.equal(draft.date, '2026-11-02');
   assert.equal(draft.startTime, '');
 });
+
+test('a referenceDate that is not a real date is a validation error', async (t) => {
+  const server = startTestServer();
+  t.after(() => server.close());
+  const { api } = await server.login(ELIF);
+  for (const referenceDate of ['2026-02-31', 'yarın']) {
+    const res = await api('/ai/parse-appointment', { method: 'POST', body: { prompt: 'Yarın 14:00', referenceDate } });
+    assert.equal(res.status, 400, referenceDate);
+  }
+});

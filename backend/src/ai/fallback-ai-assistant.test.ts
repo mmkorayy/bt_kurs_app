@@ -67,3 +67,9 @@ test('a client name with regex characters does not crash the parser', async () =
   assert.equal(draft.clientId, 'c1');
   assert.equal(draft.note, 'kontrol');
 });
+
+test('a weekday word is not taken as part of a new client name', async () => {
+  const ai = new FallbackAiAssistant();
+  const draft = await ai.parseAppointmentPrompt({ prompt: 'Pazartesi Ali Veli kontrol', referenceDate: '2026-11-02', clients: [] });
+  assert.deepEqual(draft.suggestedClient, { firstName: 'Ali', lastName: 'Veli' });
+});

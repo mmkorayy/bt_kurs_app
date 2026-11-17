@@ -195,3 +195,28 @@ test('a failed e-mail releases the claim so the next check can try again', async
   emailSender.send = original;
   assert.equal((await service.checkUserReminders('u1')).sentCount, 1);
 });
+
+test('checkAllUsers keeps going when one user fails', async () => {
+  const { appointments, clients, notifications } = setup();
+  const users = new MemoryUserRepository([
+    { id: 'u1', email: 'bir@bookpal.demo', displayName: 'Bir' },
+    { id: 'u2', email: 'iki@bookpal.demo', displayName: 'İki' },
+  ]);
+  const sent: string[] = [];
+  const emailSender: EmailSender = {
+    async send(message) {
+      if (message.to === 'bir@bookpal.demo') throw new Error('smtp down');
+      sent.push(message.to);
+    },
+  };
+  const service = new ReminderService(users, appointments, clients, notifications, new FallbackAiAssistant(), emailSender, () => new Date('2026-11-17T10:35:00Z'));
+  for (const id of ['u1', 'u2']) {
+    await clients.create({ id: `c-${id}`, userId: id, firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-01-01', gender: 'female', deletedAt: null });
+    await appointments.saveIfNoConflict({
+      id: `a-${id}`, userId: id, clientId: `c-${id}`, date: '2026-11-17', startTime: '14:00', endTime: '15:00',
+      status: 'scheduled', note: '', reminderSentAt: null,
+    });
+  }
+  assert.equal(await service.checkAllUsers(), 1);
+  assert.deepEqual(sent, ['iki@bookpal.demo']);
+});

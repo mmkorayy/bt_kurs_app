@@ -39,6 +39,9 @@ export function DailyPage() {
   // Danışan kayıtlı değilse önce danışan formu, kaydedilince randevu formu açılır.
   const [clientStep, setClientStep] = useState(false);
   const [draftClientId, setDraftClientId] = useState<string | undefined>();
+  // Cevap geldiğinde hâlâ sorunun sorulduğu gün açık mı, bakmak için.
+  const dateRef = useRef(date);
+  dateRef.current = date;
 
   // Başka güne geçince eski günün iptal hatası görünmesin.
   useEffect(() => setActionError(''), [date]);
@@ -47,15 +50,20 @@ export function DailyPage() {
 
   async function runPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!prompt.trim()) return;
+    const submitted = prompt;
+    if (!submitted.trim()) return;
+    const askedFor = date;
     setAssistantError('');
     setAssistantBusy(true);
     try {
-      const result = await parseAppointmentPrompt(prompt.trim(), date);
+      const result = await parseAppointmentPrompt(submitted.trim(), askedFor);
+      // Kullanıcı bu arada başka güne geçtiyse taslak açılmaz.
+      if (dateRef.current !== askedFor) return;
       setDraft(result);
       setDraftClientId(result.clientId ?? undefined);
       setClientStep(result.clientId === null && result.suggestedClient !== null);
-      setPrompt('');
+      // Bu arada yeni bir şey yazıldıysa o silinmez.
+      setPrompt((current) => (current === submitted ? '' : current));
     } catch (failure) {
       setAssistantError(failure instanceof ApiError ? failure.message : 'Bir şeyler ters gitti.');
     } finally {

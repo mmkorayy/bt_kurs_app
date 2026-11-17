@@ -99,7 +99,71 @@ describe('reminder footer', () => {
   test('a footer that cannot load stays quiet instead of breaking the page', async () => {
     stubFetch({ [ME]: me });
     renderApp(<App />, { route: '/panel/hafta' });
-    expect(await screen.findByLabelText('Hatırlatma süresi')).toBeTruthy();
+    const select = (await screen.findByLabelText('Hatırlatma süresi')) as HTMLSelectElement;
     expect(screen.queryByRole('alert')).toBeNull();
+    // Gerçek ayar bilinmiyorsa "30" gibi yanlış bir değer gösterilmez, seçim kapalı kalır.
+    await waitFor(() => expect(select.disabled).toBe(true));
+    expect(within(select).getByRole('option', { name: 'Yüklenemedi' })).toBeTruthy();
+    expect(select.value).not.toBe('30');
+  });
+
+  test('the result of "Şimdi kontrol et" is announced as a status message', async () => {
+    stubFetch({
+      [ME]: me,
+      [SETTINGS]: () => ({ body: { reminderMinutesBefore: 30 } }),
+      [SENT]: () => ({ body: { notifications: [] } }),
+      'POST /api/v1/reminders/check': () => ({ body: { sentCount: 0, notifications: [] } }),
+    });
+    renderApp(<App />, { route: '/panel/hafta' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Şimdi kontrol et' }));
+    expect((await screen.findByRole('status')).textContent).toBe('Gönderilecek hatırlatma yok.');
+  });
+
+  test('a late failure of an older change does not roll the select back over a newer one', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let patches = 0;
+    stubFetch({
+      [ME]: me,
+      [SETTINGS]: () => ({ body: { reminderMinutesBefore: 30 } }),
+      [SENT]: () => ({ body: { notifications: [] } }),
+      'PATCH /api/v1/settings/reminders': async ({ body }) => {
+        patches += 1;
+        if (patches === 1) {
+          await gate;
+          return { status: 400, body: { error: { code: 'validation_error', message: 'Eski değişiklik reddedildi.' } } };
+        }
+        return { body };
+      },
+    });
+    renderApp(<App />, { route: '/panel/hafta' });
+    const select = (await screen.findByLabelText('Hatırlatma süresi')) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe('30'));
+    fireEvent.change(select, { target: { value: '15' } });
+    fireEvent.change(select, { target: { value: '60' } });
+    await waitFor(() => expect(patches).toBe(2));
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(select.value).toBe('60');
+    expect(screen.queryByText('Eski değişiklik reddedildi.')).toBeNull();
+  });
+
+  test('the sent list refreshes by itself, so reminders sent by the timer show up', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let calls = 0;
+      stubFetch({
+        [ME]: me,
+        [SETTINGS]: () => ({ body: { reminderMinutesBefore: 30 } }),
+        [SENT]: () => ({ body: { notifications: ++calls === 1 ? [] : [NOTE] } }),
+      });
+      renderApp(<App />, { route: '/panel/hafta' });
+      await screen.findByLabelText('Hatırlatma süresi');
+      expect(screen.queryByText(NOTE.subject)).toBeNull();
+      await vi.advanceTimersByTimeAsync(61_000);
+      expect(await screen.findByText(NOTE.subject)).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

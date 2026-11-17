@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { checkRemindersNow, getReminderSettings, listSentReminders, updateReminderSettings } from '../../api/reminders';
 import { REMINDER_MINUTES, type ReminderMinutes, type ReminderNotification } from '../../api/types';
@@ -13,26 +13,43 @@ export function ReminderFooter() {
   const settings = useApi(getReminderSettings, []);
   const sent = useApi(listSentReminders, []);
 
-  const [minutes, setMinutes] = useState<string>('30');
+  const [minutes, setMinutes] = useState<string>('');
+  // Sunucunun onayladığı son değer ve en yeni değişikliğin sırası: eski bir hata yeni seçimi ezmesin.
+  const confirmed = useRef('');
+  const latest = useRef(0);
   const [notifications, setNotifications] = useState<ReminderNotification[]>([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const loaded = settings.data !== undefined;
   useEffect(() => {
-    if (settings.data) setMinutes(settings.data.reminderMinutesBefore === null ? '' : String(settings.data.reminderMinutesBefore));
+    if (!settings.data) return;
+    const value = settings.data.reminderMinutesBefore === null ? '' : String(settings.data.reminderMinutesBefore);
+    confirmed.current = value;
+    setMinutes(value);
   }, [settings.data]);
+
+  // Zamanlayıcının gönderdiği hatırlatmalar da görünsün diye liste dakikada bir yenilenir.
+  const reloadSent = useRef(sent.reload);
+  reloadSent.current = sent.reload;
+  useEffect(() => {
+    const timer = setInterval(() => reloadSent.current(), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   useEffect(() => {
     if (sent.data) setNotifications(sent.data);
   }, [sent.data]);
 
   async function changeMinutes(value: string) {
-    const previous = minutes;
+    const token = ++latest.current;
     setMinutes(value);
     setStatus('');
     try {
       await updateReminderSettings(value === '' ? null : (Number(value) as ReminderMinutes));
+      if (token === latest.current) confirmed.current = value;
     } catch (failure) {
-      setMinutes(previous);
+      if (token !== latest.current) return;
+      setMinutes(confirmed.current);
       setStatus(failure instanceof ApiError ? failure.message : 'Ayar kaydedilemedi.');
     }
   }
@@ -55,7 +72,13 @@ export function ReminderFooter() {
     <footer className="panel-footer">
       <div className="reminder-controls">
         <label htmlFor="reminder-minutes">Hatırlatma süresi</label>
-        <select id="reminder-minutes" value={minutes} onChange={(event) => void changeMinutes(event.target.value)}>
+        <select
+          id="reminder-minutes"
+          value={loaded ? minutes : 'unknown'}
+          disabled={!loaded}
+          onChange={(event) => void changeMinutes(event.target.value)}
+        >
+          {!loaded && <option value="unknown">{settings.error ? 'Yüklenemedi' : 'Yükleniyor…'}</option>}
           <option value="">Kapalı</option>
           {REMINDER_MINUTES.map((value) => (
             <option key={value} value={value}>
@@ -66,7 +89,11 @@ export function ReminderFooter() {
         <button type="button" disabled={busy} onClick={() => void checkNow()}>
           Şimdi kontrol et
         </button>
-        {status && <span className="reminder-status">{status}</span>}
+        {status && (
+          <span className="reminder-status" role="status">
+            {status}
+          </span>
+        )}
       </div>
       {notifications.length > 0 && (
         <ul className="reminder-list" aria-label="Gönderilen hatırlatmalar">

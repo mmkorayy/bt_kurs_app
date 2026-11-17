@@ -126,8 +126,13 @@ Bookpal`;
     const users = await this.users.listUsersWithRemindersEnabled();
     let totalSent = 0;
     for (const u of users) {
-      const result = await this.checkUserReminders(u.id);
-      totalSent += result.sentCount;
+      try {
+        const result = await this.checkUserReminders(u.id);
+        totalSent += result.sentCount;
+      } catch (error) {
+        // Bir kullanıcının hatası diğerlerinin hatırlatmasını durdurmasın.
+        console.error(`Hatırlatma kontrolü başarısız (kullanıcı ${u.id}):`, error instanceof Error ? error.message : error);
+      }
     }
     return totalSent;
   }

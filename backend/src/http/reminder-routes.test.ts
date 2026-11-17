@@ -92,3 +92,16 @@ test('one user never sees another user notifications', async (t) => {
   const sent = (await (await mert.api('/reminders/sent')).json()) as Notifications;
   assert.equal(sent.notifications.length, 0);
 });
+
+test('a strange limit on the sent list is treated like the default, never an error', async (t) => {
+  const server = startTestServer(buildTestDeps({}, NOW));
+  t.after(() => server.close());
+  const { api } = await server.login(ELIF);
+  await appointmentAt(api, '10:00', '11:00');
+  await api('/reminders/check', { method: 'POST' });
+  for (const limit of ['-1', '1.5', 'abc', '0', '100000']) {
+    const res = await api(`/reminders/sent?limit=${limit}`);
+    assert.equal(res.status, 200, `limit=${limit}`);
+    assert.equal(((await res.json()) as Notifications).notifications.length, 1, `limit=${limit}`);
+  }
+});

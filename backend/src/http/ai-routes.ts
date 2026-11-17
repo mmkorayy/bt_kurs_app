@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validationError } from '../domain/errors.js';
 import type { AppDeps } from '../app.js';
-import { sanitizeDraft } from '../ai/draft-validation.js';
+import { isRealDate, sanitizeDraft } from '../ai/draft-validation.js';
 import { istanbulParts } from '../services/istanbul-time.js';
 import { requireAuth } from './auth-middleware.js';
 
@@ -16,10 +16,11 @@ export function createAiRoutes(deps: AppDeps): Router {
         throw validationError('Komut boş olamaz.');
       }
 
-      const referenceDate =
-        typeof req.body?.referenceDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.body.referenceDate)
-          ? req.body.referenceDate
-          : istanbulParts(new Date()).date;
+      const requested = req.body?.referenceDate;
+      if (requested !== undefined && (typeof requested !== 'string' || !isRealDate(requested))) {
+        throw validationError('Referans tarih YYYY-AA-GG biçiminde gerçek bir tarih olmalıdır.');
+      }
+      const referenceDate = requested ?? istanbulParts(new Date()).date;
 
       const clients = await deps.clients.search(req.user!.id);
       const rawDraft = await deps.ai.parseAppointmentPrompt({

@@ -594,4 +594,48 @@ describe('quick appointment box (AI assistant)', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Komut boş olamaz.');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  test('text typed while the assistant is still thinking is kept', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [clientRecord(CAN)] } }),
+      [PARSE]: async () => {
+        await gate;
+        return { body: { draft: { clientId: 'c2', suggestedClient: null, date: '2026-11-07', startTime: '14:00', endTime: '15:00', note: '' } } };
+      },
+    });
+    openDaily();
+    await screen.findByText('Bu gün için randevu yok');
+    askAssistant('Bugün 14:00 Can Demir');
+    fireEvent.change(screen.getByLabelText('Hızlı randevu komutu'), { target: { value: 'ikinci komut' } });
+    release();
+    await screen.findByRole('dialog', { name: 'Randevu ekle' });
+    expect((screen.getByLabelText('Hızlı randevu komutu') as HTMLInputElement).value).toBe('ikinci komut');
+  });
+
+  test('an answer that arrives after the user moved to another day is dropped', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const { calls } = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [NEXT_DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [clientRecord(CAN)] } }),
+      [PARSE]: async () => {
+        await gate;
+        return { body: { draft: { clientId: 'c2', suggestedClient: null, date: '2026-11-07', startTime: '14:00', endTime: '15:00', note: '' } } };
+      },
+    });
+    openDaily();
+    await screen.findByText('Bu gün için randevu yok');
+    askAssistant('Bugün 14:00 Can Demir');
+    fireEvent.click(screen.getByRole('button', { name: 'Sonraki gün' }));
+    await waitFor(() => expect(calls.some((c) => c.url.includes('from=2026-11-08'))).toBe(true));
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
 });
