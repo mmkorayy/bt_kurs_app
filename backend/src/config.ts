@@ -4,6 +4,8 @@ export interface Config {
   demoAccountsEnabled: boolean;
   /** Boşsa veriler bellekte tutulur. */
   databaseUrl: string | undefined;
+  geminiApiKey: string | undefined;
+  geminiModel: string | undefined;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -14,5 +16,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     production,
     demoAccountsEnabled: demo === 'true' ? true : demo === 'false' ? false : !production,
     databaseUrl: env.DATABASE_URL?.trim() || undefined,
+    geminiApiKey: env.GEMINI_API_KEY?.trim() || undefined,
+    geminiModel: env.GEMINI_MODEL?.trim() || undefined,
   };
 }

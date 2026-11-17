@@ -29,6 +29,29 @@ export interface Appointment {
   endTime: string;
   status: AppointmentStatus;
   note: string;
+  reminderSentAt?: string | null;
+}
+
+export type ReminderMinutes = 15 | 30 | 60;
+export const REMINDER_MINUTES_OPTIONS: readonly ReminderMinutes[] = [15, 30, 60];
+
+export interface AppointmentDraft {
+  clientId: string | null;
+  suggestedClient: { firstName: string; lastName: string } | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  note: string;
+}
+
+export interface ReminderNotification {
+  id: string;
+  userId: string;
+  appointmentId: string;
+  recipientEmail: string;
+  subject: string;
+  body: string;
+  sentAt: string;
 }
 
 export interface ClientInput {
