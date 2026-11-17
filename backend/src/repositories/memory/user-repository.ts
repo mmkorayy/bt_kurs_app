@@ -5,7 +5,7 @@ export class MemoryUserRepository implements UserRepository {
   private readonly users = new Map<string, User>();
   private readonly reminderSettings = new Map<string, ReminderMinutes | null>();
 
-  constructor(initialUsers: User[] = []) {
+  constructor(initialUsers: readonly User[] = []) {
     for (const u of initialUsers) {
       this.users.set(u.id, u);
       this.reminderSettings.set(u.id, 30); // Varsayılan 30 dk

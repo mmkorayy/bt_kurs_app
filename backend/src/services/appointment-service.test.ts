@@ -18,7 +18,8 @@ const slot = (over: Partial<AppointmentInput> = {}): AppointmentInput => ({
 
 function setup() {
   const clients = new MemoryClientRepository();
-  const service = new AppointmentService(new MemoryAppointmentRepository(), clients);
+  const appointments = new MemoryAppointmentRepository();
+  const service = new AppointmentService(appointments, clients);
   const addClient = (userId: string, id: string, over: Partial<Client> = {}) =>
     clients.create({
       id,
@@ -30,7 +31,7 @@ function setup() {
       deletedAt: null,
       ...over,
     });
-  return { clients, service, addClient };
+  return { clients, appointments, service, addClient };
 }
 
 const isNotFound = (e: unknown) => e instanceof AppError && e.status === 404 && e.code === 'not_found';

@@ -20,6 +20,11 @@ const ROUTES = [
   'GET /appointments/{id}',
   'PATCH /appointments/{id}',
   'DELETE /appointments/{id}',
+  'POST /ai/parse-appointment',
+  'GET /settings/reminders',
+  'PATCH /settings/reminders',
+  'POST /reminders/check',
+  'GET /reminders/sent',
 ];
 
 const CONTRACT = path.resolve(import.meta.dirname, '../../api-contract/openapi.yaml');
