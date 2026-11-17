@@ -2,17 +2,18 @@ import { screen } from '@testing-library/react';
 import { App } from '../../App';
 import { DEMO_USER, renderApp, stubFetch } from '../../test-utils';
 
-test('the top bar has the four tabs, the user name and a logout button', async () => {
+test('the top bar has the five tabs, the user name and a logout button', async () => {
   stubFetch({ 'GET /api/v1/auth/me': () => ({ body: { user: DEMO_USER } }) });
   renderApp(<App />, { route: '/panel/hafta' });
 
   const nav = await screen.findByRole('navigation', { name: 'Panel menüsü' });
   const links = Array.from(nav.querySelectorAll('a'));
-  expect(links.map((a) => a.textContent)).toEqual(['Gün', 'Hafta', 'Ay', 'Danışanlar']);
+  expect(links.map((a) => a.textContent)).toEqual(['Gün', 'Hafta', 'Ay', 'Randevular', 'Danışanlar']);
   expect(links.map((a) => a.getAttribute('href'))).toEqual([
     '/panel',
     '/panel/hafta',
     '/panel/ay',
+    '/panel/randevular',
     '/panel/danisanlar',
   ]);
   expect(screen.getByText('Elif')).toBeTruthy();

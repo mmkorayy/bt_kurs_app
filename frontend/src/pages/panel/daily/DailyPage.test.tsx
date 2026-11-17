@@ -500,3 +500,98 @@ describe('end time must come after the start time', () => {
     expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1);
   });
 });
+
+describe('quick appointment box (AI assistant)', () => {
+  const PARSE = 'POST /api/v1/ai/parse-appointment';
+
+  function askAssistant(prompt: string) {
+    fireEvent.change(screen.getByLabelText('Hızlı randevu komutu'), { target: { value: prompt } });
+    fireEvent.click(screen.getByRole('button', { name: 'Oluştur' }));
+  }
+
+  test('a saved client opens the appointment form already filled from the draft', async () => {
+    const { calls } = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: [clientRecord(ELIF), clientRecord(CAN)] } }),
+      [PARSE]: () => ({
+        body: {
+          draft: { clientId: 'c2', suggestedClient: null, date: '2026-11-08', startTime: '14:00', endTime: '15:00', note: 'kontrol' },
+        },
+      }),
+    });
+    openDaily();
+    await screen.findByText('Bu gün için randevu yok');
+    askAssistant('Yarın 14:00 Can Demir kontrol');
+
+    const dialog = await screen.findByRole('dialog', { name: 'Randevu ekle' });
+    expect(calls.find((c) => c.url === '/api/v1/ai/parse-appointment')?.body).toEqual({
+      prompt: 'Yarın 14:00 Can Demir kontrol',
+      referenceDate: '2026-11-07',
+    });
+    await waitFor(() => expect((within(dialog).getByLabelText('Danışan') as HTMLSelectElement).value).toBe('c2'));
+    expect((within(dialog).getByLabelText('Tarih') as HTMLInputElement).value).toBe('2026-11-08');
+    expect((within(dialog).getByLabelText('Başlangıç') as HTMLInputElement).value).toBe('14:00');
+    expect((within(dialog).getByLabelText('Bitiş') as HTMLInputElement).value).toBe('15:00');
+    expect((within(dialog).getByLabelText('Not') as HTMLTextAreaElement).value).toBe('kontrol');
+  });
+
+  test('an unknown client first opens the client form, then the appointment form with the new client', async () => {
+    const NEW = clientRecord({ id: 'c9', firstName: 'Selin', lastName: 'Arslan' });
+    let created = false;
+    const { calls } = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [CLIENTS]: () => ({ body: { clients: created ? [clientRecord(ELIF), NEW] : [clientRecord(ELIF)] } }),
+      [PARSE]: () => ({
+        body: {
+          draft: {
+            clientId: null,
+            suggestedClient: { firstName: 'Selin', lastName: 'Arslan' },
+            date: '2026-11-08',
+            startTime: '16:00',
+            endTime: '17:00',
+            note: '',
+          },
+        },
+      }),
+      'POST /api/v1/clients': () => {
+        created = true;
+        return { status: 201, body: { client: NEW } };
+      },
+    });
+    openDaily();
+    await screen.findByText('Bu gün için randevu yok');
+    askAssistant('Yarın 16:00 Selin Arslan');
+
+    const clientDialog = await screen.findByRole('dialog', { name: 'Danışan ekle' });
+    expect((within(clientDialog).getByLabelText('Ad') as HTMLInputElement).value).toBe('Selin');
+    expect((within(clientDialog).getByLabelText('Soyad') as HTMLInputElement).value).toBe('Arslan');
+    expect(within(clientDialog).getByText(/kayıtlı değil/)).toBeTruthy();
+    fireEvent.change(within(clientDialog).getByLabelText('Doğum tarihi'), { target: { value: '1992-03-04' } });
+    fireEvent.change(within(clientDialog).getByLabelText('Cinsiyet'), { target: { value: 'female' } });
+    fireEvent.click(within(clientDialog).getByRole('button', { name: 'Kaydet' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Randevu ekle' });
+    await waitFor(() => expect((within(dialog).getByLabelText('Danışan') as HTMLSelectElement).value).toBe('c9'));
+    expect((within(dialog).getByLabelText('Başlangıç') as HTMLInputElement).value).toBe('16:00');
+    expect((within(dialog).getByLabelText('Bitiş') as HTMLInputElement).value).toBe('17:00');
+    expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/v1/appointments')).toHaveLength(0);
+  });
+
+  test('a failed assistant call shows the message and an empty box sends nothing', async () => {
+    const { calls } = stubFetch({
+      [ME]: me,
+      [DAY]: () => ({ body: { appointments: [] } }),
+      [PARSE]: () => ({ status: 400, body: { error: { code: 'validation_error', message: 'Komut boş olamaz.' } } }),
+    });
+    openDaily();
+    await screen.findByText('Bu gün için randevu yok');
+    fireEvent.click(screen.getByRole('button', { name: 'Oluştur' }));
+    expect(calls.filter((c) => c.url.includes('/ai/'))).toHaveLength(0);
+
+    askAssistant('???');
+    expect((await screen.findByRole('alert')).textContent).toBe('Komut boş olamaz.');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});

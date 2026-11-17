@@ -8,11 +8,21 @@ import { statusLabel } from '../../../lib/labels';
 import { useApi } from '../../../lib/useApi';
 import './AppointmentForm.css';
 
+export interface AppointmentFormDraft {
+  clientId?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  note?: string;
+}
+
 interface AppointmentFormProps {
   /** Verilirse düzenleme, verilmezse yeni randevu. */
   appointment?: AppointmentView;
   /** Yeni randevuda tarih alanının başlangıç değeri (açık olan gün). */
   defaultDate: string;
+  /** Yapay zekâ taslağı: yeni randevunun alanlarını önceden doldurur. */
+  draft?: AppointmentFormDraft;
   onSaved: () => void;
   onClose: () => void;
 }
@@ -25,18 +35,18 @@ function oneHourLater(time: string): string {
   return `${String(hours + 1).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
-export function AppointmentForm({ appointment, defaultDate, onSaved, onClose }: AppointmentFormProps) {
+export function AppointmentForm({ appointment, defaultDate, draft, onSaved, onClose }: AppointmentFormProps) {
   const clientsResult = useApi(() => listClients(), []);
   const clients = clientsResult.data ?? [];
 
-  const [clientId, setClientId] = useState(appointment?.clientId ?? '');
-  const [date, setDate] = useState(appointment?.date ?? defaultDate);
-  const [startTime, setStartTime] = useState(appointment?.startTime ?? '');
-  const [endTime, setEndTime] = useState(appointment?.endTime ?? '');
+  const [clientId, setClientId] = useState(appointment?.clientId ?? draft?.clientId ?? '');
+  const [date, setDate] = useState(appointment?.date ?? draft?.date ?? defaultDate);
+  const [startTime, setStartTime] = useState(appointment?.startTime ?? draft?.startTime ?? '');
+  const [endTime, setEndTime] = useState(appointment?.endTime ?? draft?.endTime ?? '');
   // Bitişi kullanıcı yazdıysa (ya da kayıtlı randevuysa) başlangıç değişince ezilmez.
-  const [endTouched, setEndTouched] = useState(appointment !== undefined);
+  const [endTouched, setEndTouched] = useState(appointment !== undefined || Boolean(draft?.endTime));
   const [status, setStatus] = useState<AppointmentStatus>(appointment?.status ?? 'scheduled');
-  const [note, setNote] = useState(appointment?.note ?? '');
+  const [note, setNote] = useState(appointment?.note ?? draft?.note ?? '');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 

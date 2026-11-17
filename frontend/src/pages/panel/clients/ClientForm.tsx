@@ -9,13 +9,18 @@ import './ClientForm.css';
 interface ClientFormProps {
   /** Verilirse düzenleme, verilmezse yeni danışan. */
   client?: Client;
-  onSaved: () => void;
+  /** Yeni danışanda ad ve soyadı önceden doldurur (yapay zekâ taslağı). */
+  initialDraft?: { firstName: string; lastName: string };
+  /** Formun üstünde gösterilen açıklama. */
+  hint?: string;
+  /** Kaydedilen danışanı verir; parametresiz kullanan çağıranlarla uyumludur. */
+  onSaved: (client: Client) => void;
   onClose: () => void;
 }
 
-export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
-  const [firstName, setFirstName] = useState(client?.firstName ?? '');
-  const [lastName, setLastName] = useState(client?.lastName ?? '');
+export function ClientForm({ client, initialDraft, hint, onSaved, onClose }: ClientFormProps) {
+  const [firstName, setFirstName] = useState(client?.firstName ?? initialDraft?.firstName ?? '');
+  const [lastName, setLastName] = useState(client?.lastName ?? initialDraft?.lastName ?? '');
   const [birthDate, setBirthDate] = useState(client?.birthDate ?? '');
   const [gender, setGender] = useState<Gender | ''>(client?.gender ?? '');
   const [error, setError] = useState('');
@@ -28,9 +33,8 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
     // Sunucu geçersiz cinsiyeti kendi mesajıyla reddeder; boş seçim olduğu gibi gider.
     const values = { firstName: firstName.trim(), lastName: lastName.trim(), birthDate, gender: gender as Gender };
     try {
-      if (client) await updateClient(client.id, values);
-      else await createClient(values);
-      onSaved();
+      const saved = client ? await updateClient(client.id, values) : await createClient(values);
+      onSaved(saved);
     } catch (failure) {
       // Pencere açık kalır, yazılanlar korunur.
       setError(failure instanceof ApiError ? failure.message : 'Bir şeyler ters gitti.');
@@ -42,6 +46,7 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
     // Kayıt sürerken pencere kapatılamaz: kapansa da danışan kaydedilirdi.
     <Modal title={client ? 'Danışanı düzenle' : 'Danışan ekle'} onClose={saving ? () => undefined : onClose}>
       <form onSubmit={handleSubmit} noValidate>
+        {hint && <p className="client-form-hint">{hint}</p>}
         <div className="client-form-field">
           <label htmlFor="client-first-name">Ad</label>
           <input
