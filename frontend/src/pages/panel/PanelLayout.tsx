@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router';
 import { useAuth } from '../../auth/AuthProvider';
+import { ReminderFooter } from './ReminderFooter';
 import './PanelLayout.css';
 
 const TABS = [
@@ -41,6 +42,7 @@ export function PanelLayout() {
       <main className="panel-main">
         <Outlet />
       </main>
+      <ReminderFooter />
     </div>
   );
 }
