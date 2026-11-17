@@ -89,7 +89,7 @@ export class FallbackAiAssistant implements AiAssistant {
     // 4. Not kısmı: Cümleden tarih, saat ve isim kelimelerini temizle
     let note = text;
     if (matchedClientName) {
-      note = note.replace(new RegExp(matchedClientName, 'gi'), '');
+      note = note.replace(new RegExp(matchedClientName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
     }
     note = note
       .replace(/\b(bugün|yarın|öbür gün|saat)\b/gi, '')

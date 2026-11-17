@@ -25,8 +25,8 @@ function setup() {
   const ai = new FallbackAiAssistant();
   const emailSender = new MockEmailSender();
 
-  // Sabit referans zamanı: 2026-11-17 saat 13:35
-  const mockNow = new Date(2026, 10, 17, 13, 35, 0);
+  // Sabit referans zamanı: 2026-11-17 saat 13:35 (İstanbul, UTC+3)
+  const mockNow = new Date('2026-11-17T10:35:00Z'); // 13:35 İstanbul saati
 
   const service = new ReminderService(
     users,
@@ -146,4 +146,52 @@ test('does not send reminder for cancelled appointments', async () => {
   const result = await service.checkUserReminders('u1');
   assert.equal(result.sentCount, 0);
   assert.equal(emailSender.sent.length, 0);
+});
+
+
+test('two checks at the same moment send only one reminder for an appointment', async () => {
+  const { service, appointments, clients, emailSender, notifications } = setup();
+  await clients.create({ id: 'c1', userId: 'u1', firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-01-01', gender: 'female', deletedAt: null });
+  await appointments.saveIfNoConflict({
+    id: 'a1', userId: 'u1', clientId: 'c1', date: '2026-11-17', startTime: '14:00', endTime: '15:00',
+    status: 'scheduled', note: '', reminderSentAt: null,
+  });
+
+  const [a, b] = await Promise.all([service.checkUserReminders('u1'), service.checkUserReminders('u1')]);
+
+  assert.equal(a.sentCount + b.sentCount, 1);
+  assert.equal(emailSender.sent.length, 1);
+  assert.equal((await notifications.listByUser('u1', 10)).length, 1);
+});
+
+test('the window uses Istanbul time, whatever the server time zone is', async () => {
+  const { service, appointments, clients, emailSender } = setup();
+  await clients.create({ id: 'c1', userId: 'u1', firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-01-01', gender: 'female', deletedAt: null });
+  // Şimdi İstanbul'da 13:35. 14:00 randevusu 25 dk sonra: gönderilmeli. 17:00 randevusu: gönderilmemeli.
+  for (const [id, start, end] of [['a1', '14:00', '15:00'], ['a2', '17:00', '18:00']]) {
+    await appointments.saveIfNoConflict({
+      id, userId: 'u1', clientId: 'c1', date: '2026-11-17', startTime: start, endTime: end,
+      status: 'scheduled', note: '', reminderSentAt: null,
+    });
+  }
+  const result = await service.checkUserReminders('u1');
+  assert.equal(result.sentCount, 1);
+  assert.equal(result.notifications[0].appointmentId, 'a1');
+  assert.equal(emailSender.sent.length, 1);
+});
+
+test('a failed e-mail releases the claim so the next check can try again', async () => {
+  const { service, appointments, clients, emailSender } = setup();
+  await clients.create({ id: 'c1', userId: 'u1', firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-01-01', gender: 'female', deletedAt: null });
+  await appointments.saveIfNoConflict({
+    id: 'a1', userId: 'u1', clientId: 'c1', date: '2026-11-17', startTime: '14:00', endTime: '15:00',
+    status: 'scheduled', note: '', reminderSentAt: null,
+  });
+  const original = emailSender.send.bind(emailSender);
+  emailSender.send = async () => {
+    throw new Error('smtp down');
+  };
+  await assert.rejects(() => service.checkUserReminders('u1'), /smtp down/);
+  emailSender.send = original;
+  assert.equal((await service.checkUserReminders('u1')).sentCount, 1);
 });

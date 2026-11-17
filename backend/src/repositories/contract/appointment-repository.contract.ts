@@ -20,6 +20,7 @@ const appt = (over: Partial<Appointment> = {}): Appointment => ({
   endTime: '11:00',
   status: 'scheduled',
   note: '',
+  reminderSentAt: null,
   ...over,
 });
 
@@ -121,5 +122,35 @@ export function appointmentRepositoryContract(
     ]);
     assert.equal(results.filter((result) => result === undefined).length, 1);
     assert.equal((await repo.listByDateRange('u1', '2026-11-05', '2026-11-05')).length, 1);
+  });
+
+  test(`${label}: saving writes reminderSentAt, so resetting it to null sticks`, { skip }, async () => {
+    const { repo } = await ready(setup);
+    await repo.saveIfNoConflict(appt());
+    await repo.markReminderSent('u1', 'a1', '2026-11-05T06:30:00.000Z');
+    assert.equal((await repo.findById('u1', 'a1'))?.reminderSentAt, '2026-11-05T06:30:00.000Z');
+    await repo.saveIfNoConflict(appt({ startTime: '16:00', endTime: '17:00', reminderSentAt: null }));
+    assert.equal((await repo.findById('u1', 'a1'))?.reminderSentAt, null);
+  });
+
+  test(`${label}: claimReminder succeeds once, then refuses (even when simultaneous)`, { skip }, async () => {
+    const { repo } = await ready(setup);
+    await repo.saveIfNoConflict(appt());
+    const results = await Promise.all([
+      repo.claimReminder('u1', 'a1', '2026-11-05T06:30:00.000Z'),
+      repo.claimReminder('u1', 'a1', '2026-11-05T06:30:01.000Z'),
+    ]);
+    assert.deepEqual(results.filter(Boolean).length, 1);
+    assert.equal(await repo.claimReminder('u1', 'a1', '2026-11-05T06:31:00.000Z'), false);
+  });
+
+  test(`${label}: claimReminder refuses another user, a cancelled or an unknown appointment`, { skip }, async () => {
+    const { repo } = await ready(setup, ['u1', 'u2']);
+    await repo.saveIfNoConflict(appt());
+    await repo.saveIfNoConflict(appt({ id: 'a2', startTime: '12:00', endTime: '13:00', status: 'cancelled' }));
+    assert.equal(await repo.claimReminder('u2', 'a1', '2026-11-05T06:30:00.000Z'), false);
+    assert.equal(await repo.claimReminder('u1', 'a2', '2026-11-05T06:30:00.000Z'), false);
+    assert.equal(await repo.claimReminder('u1', 'nope', '2026-11-05T06:30:00.000Z'), false);
+    assert.equal((await repo.findById('u1', 'a1'))?.reminderSentAt, null);
   });
 }

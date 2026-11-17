@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ELIF, MERT, buildTestDeps, startTestServer } from '../test-support.js';
 
-// Sabit saat: 2 Kasım 2026, 09:45 (yerel saat)
-const NOW = () => new Date(2026, 10, 2, 9, 45, 0, 0);
+// Sabit saat: 2 Kasım 2026, 09:45 İstanbul saati (06:45 UTC)
+const NOW = () => new Date('2026-11-02T06:45:00Z');
 
 type Notifications = { notifications: Array<{ appointmentId: string; body: string }> };
 

@@ -30,7 +30,13 @@ export interface AppointmentRepository {
    * aynı günündeki başka bir aktif randevuyla kesişirse hiçbir şey yazmadan `undefined` döner.
    */
   saveIfNoConflict(appointment: Appointment): Promise<Appointment | undefined>;
-  markReminderSent(userId: string, id: string, sentAt: string): Promise<void>;
+  /** `null` hatırlatma işaretini kaldırır. */
+  markReminderSent(userId: string, id: string, sentAt: string | null): Promise<void>;
+  /**
+   * Hatırlatmayı tek adımda (atomik) üstlenir: randevu o kullanıcıya aitse, `scheduled` ise ve hatırlatması
+   * daha önce üstlenilmediyse işaretler ve `true` döner. Aynı anda gelen iki çağrıdan yalnızca biri kazanır.
+   */
+  claimReminder(userId: string, id: string, sentAt: string): Promise<boolean>;
   delete(userId: string, id: string): Promise<boolean>;
 }
 

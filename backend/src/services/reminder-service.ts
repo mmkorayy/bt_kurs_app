@@ -8,6 +8,7 @@ import type {
   UserRepository,
 } from '../repositories/types.js';
 import type { EmailSender } from './email-sender.js';
+import { istanbulMinutes, istanbulParts } from './istanbul-time.js';
 
 export class ReminderService {
   constructor(
@@ -47,12 +48,12 @@ export class ReminderService {
     const recipientEmail = user?.email || 'user@bookpal.demo';
 
     const currentTime = this.now();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const todayStr = `${currentTime.getFullYear()}-${pad(currentTime.getMonth() + 1)}-${pad(currentTime.getDate())}`;
+    const nowIstanbul = istanbulParts(currentTime);
+    const todayStr = nowIstanbul.date;
+    const nowMinutes = istanbulMinutes(nowIstanbul.date, nowIstanbul.time);
 
     // Bugünden yarına kadar olan randevuları kontrol et
-    const tomorrow = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
-    const tomorrowStr = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+    const tomorrowStr = istanbulParts(new Date(currentTime.getTime() + 24 * 60 * 60 * 1000)).date;
 
     const upcomingAppointments = await this.appointments.listByDateRange(userId, todayStr, tomorrowStr);
     const createdNotifications: ReminderNotification[] = [];
@@ -62,31 +63,31 @@ export class ReminderService {
         continue;
       }
 
-      const [y, m, d] = app.date.split('-').map(Number);
-      const [h, min] = app.startTime.split(':').map(Number);
-      const appDate = new Date(y, m - 1, d, h, min, 0, 0);
-
-      const diffMinutes = (appDate.getTime() - currentTime.getTime()) / (1000 * 60);
+      const diffMinutes = istanbulMinutes(app.date, app.startTime) - nowMinutes;
 
       // Randevu zamanı henüz geçmemiş ve belirlenen pencere içinde mi?
       if (diffMinutes >= 0 && diffMinutes <= minutesBefore) {
-        const client = await this.clients.findById(userId, app.clientId);
-        const clientName = client ? `${client.firstName} ${client.lastName}` : 'Danışan';
+        // Önce üstlen: aynı anda çalışan başka bir kontrol (zamanlayıcı ya da elle) aynı e-postayı göndermesin.
+        const nowIso = currentTime.toISOString();
+        if (!(await this.appointments.claimReminder(userId, app.id, nowIso))) continue;
+        try {
+          const client = await this.clients.findById(userId, app.clientId);
+          const clientName = client ? `${client.firstName} ${client.lastName}` : 'Danışan';
 
-        // Geçmiş seansları al
-        const clientAppointments = await this.appointments.listByClient(userId, app.clientId);
-        const pastAppointments = clientAppointments
-          .filter((p) => p.id !== app.id)
-          .map((p) => ({ date: p.date, status: p.status, note: p.note }));
+          // Geçmiş seansları al
+          const clientAppointments = await this.appointments.listByClient(userId, app.clientId);
+          const pastAppointments = clientAppointments
+            .filter((p) => p.id !== app.id)
+            .map((p) => ({ date: p.date, status: p.status, note: p.note }));
 
-        const aiSummary = await this.ai.summarizeClientHistory({
-          clientName,
-          upcomingAppointment: { date: app.date, startTime: app.startTime, note: app.note },
-          pastAppointments,
-        });
+          const aiSummary = await this.ai.summarizeClientHistory({
+            clientName,
+            upcomingAppointment: { date: app.date, startTime: app.startTime, note: app.note },
+            pastAppointments,
+          });
 
-        const subject = `Randevu Hatırlatması: ${clientName} ile seansınız yaklaşıyor (${app.startTime})`;
-        const body = `Merhaba,
+          const subject = `Randevu Hatırlatması: ${clientName} ile seansınız yaklaşıyor (${app.startTime})`;
+          const body = `Merhaba,
 
 ${app.date} tarihinde saat ${app.startTime}–${app.endTime} aralığında ${clientName} ile randevunuz bulunmaktadır.
 
@@ -96,22 +97,25 @@ ${aiSummary}
 İyi çalışmalar dileriz.
 Bookpal`;
 
-        await this.emailSender.send({ to: recipientEmail, subject, body });
+          await this.emailSender.send({ to: recipientEmail, subject, body });
 
-        const nowIso = currentTime.toISOString();
-        const notification: ReminderNotification = {
-          id: randomUUID(),
-          userId,
-          appointmentId: app.id,
-          recipientEmail,
-          subject,
-          body,
-          sentAt: nowIso,
-        };
+          const notification: ReminderNotification = {
+            id: randomUUID(),
+            userId,
+            appointmentId: app.id,
+            recipientEmail,
+            subject,
+            body,
+            sentAt: nowIso,
+          };
 
-        await this.notifications.create(notification);
-        await this.appointments.markReminderSent(userId, app.id, nowIso);
-        createdNotifications.push(notification);
+          await this.notifications.create(notification);
+          createdNotifications.push(notification);
+        } catch (error) {
+          // Gönderilemediyse üstlenmeyi bırak: sonraki kontrol yeniden denesin.
+          await this.appointments.markReminderSent(userId, app.id, null);
+          throw error;
+        }
       }
     }
 

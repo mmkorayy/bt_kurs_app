@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ELIF, MERT, startTestServer } from '../test-support.js';
+import { ELIF, MERT, buildTestDeps, startTestServer } from '../test-support.js';
 
 type Draft = {
   clientId: string | null;
@@ -77,4 +77,23 @@ test('another user client is never matched, and nothing is saved', async (t) => 
     appointments: unknown[];
   };
   assert.equal(appts.appointments.length, 0);
+});
+
+test('a draft naming a client that is not the user own is cleaned before it is returned', async (t) => {
+  const evil = {
+    async parseAppointmentPrompt() {
+      return { clientId: 'not-mine', suggestedClient: null, date: '2026-02-31', startTime: '25:00', endTime: '26:00', note: 'x' };
+    },
+    async summarizeClientHistory() {
+      return '';
+    },
+  };
+  const server = startTestServer(buildTestDeps({ ai: evil }));
+  t.after(() => server.close());
+  const { api } = await server.login(ELIF);
+  const res = await api('/ai/parse-appointment', { method: 'POST', body: { prompt: 'x', referenceDate: '2026-11-02' } });
+  const { draft } = (await res.json()) as { draft: Draft };
+  assert.equal(draft.clientId, null);
+  assert.equal(draft.date, '2026-11-02');
+  assert.equal(draft.startTime, '');
 });

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { validationError } from '../domain/errors.js';
 import type { AppDeps } from '../app.js';
+import { sanitizeDraft } from '../ai/draft-validation.js';
+import { istanbulParts } from '../services/istanbul-time.js';
 import { requireAuth } from './auth-middleware.js';
 
 export function createAiRoutes(deps: AppDeps): Router {
@@ -17,15 +19,16 @@ export function createAiRoutes(deps: AppDeps): Router {
       const referenceDate =
         typeof req.body?.referenceDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.body.referenceDate)
           ? req.body.referenceDate
-          : new Date().toISOString().slice(0, 10);
+          : istanbulParts(new Date()).date;
 
       const clients = await deps.clients.search(req.user!.id);
-      const draft = await deps.ai.parseAppointmentPrompt({
+      const rawDraft = await deps.ai.parseAppointmentPrompt({
         prompt,
         referenceDate,
         clients: clients.map((c) => ({ id: c.id, firstName: c.firstName, lastName: c.lastName })),
       });
 
+      const draft = sanitizeDraft(rawDraft, { referenceDate, clientIds: clients.map((c) => c.id) });
       res.status(200).json({ draft });
     } catch (err) {
       next(err);

@@ -39,10 +39,19 @@ export class MemoryAppointmentRepository implements AppointmentRepository {
     return appointment;
   }
 
-  async markReminderSent(userId: string, id: string, sentAt: string): Promise<void> {
+  async markReminderSent(userId: string, id: string, sentAt: string | null): Promise<void> {
     const appointment = await this.findById(userId, id);
     if (!appointment) return;
     this.appointments.set(id, { ...appointment, reminderSentAt: sentAt });
+  }
+
+  // Kontrol ve yazma arasında await yok: tek süreçte atomiktir.
+  async claimReminder(userId: string, id: string, sentAt: string): Promise<boolean> {
+    const appointment = this.appointments.get(id);
+    if (!appointment || appointment.userId !== userId) return false;
+    if (appointment.status !== 'scheduled' || appointment.reminderSentAt) return false;
+    this.appointments.set(id, { ...appointment, reminderSentAt: sentAt });
+    return true;
   }
 
   async delete(userId: string, id: string): Promise<boolean> {

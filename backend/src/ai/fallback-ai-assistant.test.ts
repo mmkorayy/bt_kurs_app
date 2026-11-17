@@ -56,3 +56,14 @@ test('FallbackAiAssistant summarizes client history', async () => {
   assert.match(fullSummary, /Toplam Geçmiş Seans: 1/);
   assert.match(fullSummary, /Beslenme programı verildi/);
 });
+
+test('a client name with regex characters does not crash the parser', async () => {
+  const ai = new FallbackAiAssistant();
+  const draft = await ai.parseAppointmentPrompt({
+    prompt: 'yarın 10:00 ali [veli kontrol',
+    referenceDate: '2026-11-02',
+    clients: [{ id: 'c1', firstName: 'ali', lastName: '[veli' }],
+  });
+  assert.equal(draft.clientId, 'c1');
+  assert.equal(draft.note, 'kontrol');
+});
