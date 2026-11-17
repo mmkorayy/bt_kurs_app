@@ -14,6 +14,7 @@ interface AppointmentRow {
   end_time: string;
   status: AppointmentStatus;
   note: string;
+  reminder_sent_at?: string | null;
 }
 
 function toAppointment(row: AppointmentRow): Appointment {
@@ -26,6 +27,7 @@ function toAppointment(row: AppointmentRow): Appointment {
     endTime: row.end_time,
     status: row.status,
     note: row.note,
+    reminderSentAt: row.reminder_sent_at ?? null,
   };
 }
 
@@ -43,6 +45,21 @@ export class PostgresAppointmentRepository implements AppointmentRepository {
       [userId, from, to],
     );
     return rows.map(toAppointment);
+  }
+
+  async listByClient(userId: string, clientId: string): Promise<Appointment[]> {
+    const { rows } = await this.pool.query<AppointmentRow>(
+      'SELECT * FROM appointments WHERE user_id = $1 AND client_id = $2 ORDER BY date, start_time, id',
+      [userId, clientId],
+    );
+    return rows.map(toAppointment);
+  }
+
+  async markReminderSent(userId: string, id: string, sentAt: string): Promise<void> {
+    await this.pool.query(
+      'UPDATE appointments SET reminder_sent_at = $1 WHERE user_id = $2 AND id = $3',
+      [sentAt, userId, id],
+    );
   }
 
   /**

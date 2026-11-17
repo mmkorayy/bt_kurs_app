@@ -18,6 +18,10 @@ export class AppointmentService {
     return Promise.all(found.map((a) => this.toView(a)));
   }
 
+  async listByClient(userId: string, clientId: string): Promise<Appointment[]> {
+    return this.appointments.listByClient(userId, clientId);
+  }
+
   async get(userId: string, id: string): Promise<AppointmentView> {
     return this.toView(await this.find(userId, id));
   }
@@ -29,7 +33,16 @@ export class AppointmentService {
 
   async update(userId: string, id: string, patch: Partial<AppointmentInput>): Promise<AppointmentView> {
     const existing = await this.find(userId, id);
-    const merged: Appointment = { ...existing, ...patch };
+    const timeOrDateChanged =
+      (patch.date !== undefined && patch.date !== existing.date) ||
+      (patch.startTime !== undefined && patch.startTime !== existing.startTime);
+    const statusChangedToNonScheduled =
+      patch.status !== undefined && patch.status !== 'scheduled' && existing.status === 'scheduled';
+
+    const reminderSentAt =
+      timeOrDateChanged || statusChangedToNonScheduled ? null : existing.reminderSentAt ?? null;
+
+    const merged: Appointment = { ...existing, ...patch, reminderSentAt };
     if (merged.endTime <= merged.startTime) {
       throw validationError('Bitiş saati başlangıç saatinden sonra olmalıdır.');
     }

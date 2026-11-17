@@ -130,3 +130,16 @@ test('remove deletes the appointment for good', async () => {
   await assert.rejects(() => service.get('u1', created.id), isNotFound);
   await assert.rejects(() => service.remove('u1', created.id), isNotFound);
 });
+
+test('updating date or startTime resets reminderSentAt to null; updating note preserves it', async () => {
+  const { service, addClient, appointments } = setup();
+  await addClient('u1', 'c1');
+  const created = await service.create('u1', slot());
+  await appointments.markReminderSent('u1', created.id, '2026-11-02T08:30:00Z');
+
+  const updatedNote = await service.update('u1', created.id, { note: 'Yeni not' });
+  assert.equal(updatedNote.reminderSentAt, '2026-11-02T08:30:00Z');
+
+  const updatedTime = await service.update('u1', created.id, { startTime: '11:00', endTime: '12:00' });
+  assert.equal(updatedTime.reminderSentAt, null);
+});
