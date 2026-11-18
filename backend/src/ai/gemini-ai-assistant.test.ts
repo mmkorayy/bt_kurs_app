@@ -82,3 +82,65 @@ test('GeminiAiAssistant falls back gracefully when API returns error', async () 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('when Gemini refuses, the reason goes to the log (status and model, never the key) and the parser still answers', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  const logged: string[] = [];
+  try {
+    console.warn = (...args: unknown[]) => void logged.push(args.join(' '));
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({ error: { code: 404, status: 'NOT_FOUND', message: 'models/old-model is not found (key SECRET-KEY-123)' } }),
+        { status: 404 },
+      );
+
+    const assistant = new GeminiAiAssistant('SECRET-KEY-123', 'old-model');
+    const draft = await assistant.parseAppointmentPrompt({
+      prompt: 'Yarın 15:00 Ali Veli görüşme',
+      referenceDate: '2026-11-17',
+      clients: [{ id: 'c1', firstName: 'Ali', lastName: 'Veli' }],
+    });
+    assert.equal(draft.startTime, '15:00');
+
+    const summary = await assistant.summarizeClientHistory({
+      clientName: 'Ali Veli',
+      upcomingAppointment: { date: '2026-11-18', startTime: '15:00', note: '' },
+      pastAppointments: [],
+    });
+    assert.match(summary, /kayıtlı seans bulunmuyor/);
+
+    assert.equal(logged.length, 2);
+    for (const line of logged) {
+      assert.match(line, /Gemini/);
+      assert.match(line, /404/);
+      assert.match(line, /NOT_FOUND/);
+      assert.match(line, /old-model/);
+      assert.ok(!line.includes('SECRET-KEY-123'));
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
+});
+
+test('a network error or timeout is logged too, without the key', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  const logged: string[] = [];
+  try {
+    console.warn = (...args: unknown[]) => void logged.push(args.join(' '));
+    globalThis.fetch = async () => {
+      throw new Error('connect failed for key SECRET-KEY-123');
+    };
+    const assistant = new GeminiAiAssistant('SECRET-KEY-123');
+    await assistant.parseAppointmentPrompt({ prompt: 'Yarın 15:00 Ali Veli', referenceDate: '2026-11-17', clients: [] });
+    assert.equal(logged.length, 1);
+    assert.match(logged[0], /Gemini/);
+    assert.match(logged[0], /connect failed/);
+    assert.ok(!logged[0].includes('SECRET-KEY-123'));
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
+});

@@ -10,6 +10,23 @@ export class GeminiAiAssistant implements AiAssistant {
     private readonly model: string = 'gemini-2.5-flash',
   ) {}
 
+  /** Gemini kullanılamazsa nedenini sunucu günlüğüne yazar (anahtar asla yazılmaz). */
+  private warn(what: string, reason: string): void {
+    const safe = this.apiKey ? reason.split(this.apiKey).join('***') : reason;
+    console.warn(`Gemini kullanılamadı (${what}, model ${this.model}): ${safe}`);
+  }
+
+  private async describeHttpError(response: Response): Promise<string> {
+    let detail = '';
+    try {
+      const body = (await response.json()) as { error?: { status?: string; message?: string } };
+      detail = [body.error?.status, body.error?.message].filter(Boolean).join(' - ');
+    } catch {
+      // gövde JSON değilse sadece durum kodu yazılır
+    }
+    return `HTTP ${response.status}${detail ? ` ${detail}` : ''}`;
+  }
+
   async parseAppointmentPrompt(input: {
     prompt: string;
     referenceDate: string;
@@ -50,6 +67,7 @@ Kullanıcı Komutu: "${input.prompt}"
       );
 
       if (!response.ok) {
+        this.warn('randevu komutu', await this.describeHttpError(response));
         return this.fallback.parseAppointmentPrompt(input);
       }
 
@@ -68,8 +86,9 @@ Kullanıcı Komutu: "${input.prompt}"
         endTime: parsed.endTime || '10:00',
         note: parsed.note || 'Randevu',
       };
-    } catch {
-      // Ağ hatası, zaman aşımı veya geçersiz JSON durumunda sessizce yerel yedeğe düş
+    } catch (error) {
+      // Ağ hatası, zaman aşımı veya geçersiz JSON durumunda yerel yedeğe düş (neden günlüğe yazılır)
+      this.warn('randevu komutu', error instanceof Error ? error.message : String(error));
       return this.fallback.parseAppointmentPrompt(input);
     }
   }
@@ -104,6 +123,7 @@ Lütfen danışman seansa girmeden önce okuması için en fazla 3 maddelik, Tü
       );
 
       if (!response.ok) {
+        this.warn('seans özeti', await this.describeHttpError(response));
         return this.fallback.summarizeClientHistory(input);
       }
 
@@ -112,7 +132,8 @@ Lütfen danışman seansa girmeden önce okuması için en fazla 3 maddelik, Tü
       };
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       return text?.trim() || this.fallback.summarizeClientHistory(input);
-    } catch {
+    } catch (error) {
+      this.warn('seans özeti', error instanceof Error ? error.message : String(error));
       return this.fallback.summarizeClientHistory(input);
     }
   }
