@@ -49,12 +49,19 @@ export class FallbackAiAssistant implements AiAssistant {
     let endTime = '10:00';
 
     const rangeMatch = text.match(/\b(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})\b/);
+    const ampmMatch = text.match(/(?<!\d)(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)(?![\p{L}])/iu);
     const singleMatch = text.match(/\b(?:saat\s*)?(\d{1,2})[:.](\d{2})\b/i);
     const hourOnlyMatch = text.match(/\bsaat\s*(\d{1,2})\b/i);
 
     if (rangeMatch) {
       startTime = `${pad(Number(rangeMatch[1]))}:${rangeMatch[2]}`;
       endTime = `${pad(Number(rangeMatch[3]))}:${rangeMatch[4]}`;
+    } else if (ampmMatch && Number(ampmMatch[1]) >= 1 && Number(ampmMatch[1]) <= 12) {
+      // 12am gece yarısı (00:00), 12pm öğle (12:00), 2pm 14:00
+      const hour12 = Number(ampmMatch[1]) % 12;
+      const hour = ampmMatch[3].toLowerCase() === 'pm' ? hour12 + 12 : hour12;
+      startTime = `${pad(hour)}:${ampmMatch[2] ?? '00'}`;
+      endTime = addOneHour(startTime);
     } else if (singleMatch) {
       startTime = `${pad(Number(singleMatch[1]))}:${singleMatch[2]}`;
       endTime = addOneHour(startTime);
@@ -80,8 +87,9 @@ export class FallbackAiAssistant implements AiAssistant {
     if (!clientId) {
       // Cümlede geçen iki kelimelik büyük harfli ad-soyad adayını arayalım
       // Gün adları büyük harfle başlayabilir ("Pazartesi Ali Veli"): ad adayı sayılmaz.
-      const withoutDays = text.replace(/\b(Pazartesi|Salı|Çarşamba|Perşembe|Cuma|Cumartesi|Pazar|Yarın|Bugün)\b/g, ' ');
-      const nameMatch = withoutDays.match(/\b([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\s+([A-ZÇĞİÖŞÜ][a-zçğıöşü]+)\b/);
+      // \b Türkçe harflerde (ü, ı, ç...) çalışmaz; bu yüzden harf sınırı için (?<!\p{L}) ve (?!\p{L}) kullanılır.
+      const withoutDays = text.replace(/(?<!\p{L})(Pazartesi|Salı|Çarşamba|Perşembe|Cuma|Cumartesi|Pazar|Yarın|Bugün)(?!\p{L})/gu, ' ');
+      const nameMatch = withoutDays.match(/(?<!\p{L})(\p{Lu}\p{Ll}+)\s+(\p{Lu}\p{Ll}+)(?!\p{L})/u);
       if (nameMatch) {
         suggestedClient = { firstName: nameMatch[1], lastName: nameMatch[2] };
         matchedClientName = `${nameMatch[1]} ${nameMatch[2]}`.toLocaleLowerCase('tr-TR');
@@ -93,9 +101,13 @@ export class FallbackAiAssistant implements AiAssistant {
     if (matchedClientName) {
       note = note.replace(new RegExp(matchedClientName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
     }
+    const suffix = "(?:['’](?:da|de|ta|te))?"; // 14:00'da, 14'te
     note = note
-      .replace(/\b(bugün|yarın|öbür gün|saat)\b/gi, '')
-      .replace(/\b\d{1,2}[:.]\d{2}(?:\s*[-–]\s*\d{1,2}[:.]\d{2})?\b/g, '')
+      .replace(/(?<!\p{L})(bugün|yarın|öbür gün)(?!\p{L})/giu, '')
+      .replace(new RegExp(`(?<!\\d)\\d{1,2}(?:[:.]\\d{2})?\\s*(?:am|pm)(?![\\p{L}])${suffix}`, 'giu'), '')
+      .replace(new RegExp(`(?<!\\p{L})saat\\s*\\d{1,2}(?![\\d:.])${suffix}`, 'giu'), '')
+      .replace(/(?<!\p{L})saat(?!\p{L})/giu, '')
+      .replace(new RegExp(`\\b\\d{1,2}[:.]\\d{2}(?:\\s*[-–]\\s*\\d{1,2}[:.]\\d{2})?${suffix}`, 'g'), '')
       .replace(/\b\d{4}-\d{2}-\d{2}\b/g, '')
       .replace(/\b\d{1,2}[./]\d{1,2}[./]\d{4}\b/g, '')
       .replace(/\s+/g, ' ')
