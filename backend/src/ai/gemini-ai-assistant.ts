@@ -7,7 +7,7 @@ export class GeminiAiAssistant implements AiAssistant {
 
   constructor(
     private readonly apiKey: string | undefined,
-    private readonly model: string = 'gemini-3.1-flash-lite',
+    private readonly model: string = 'gemini-flash-latest',
   ) {}
 
   /** Gemini kullanılamazsa nedenini sunucu günlüğüne yazar (anahtar asla yazılmaz). */

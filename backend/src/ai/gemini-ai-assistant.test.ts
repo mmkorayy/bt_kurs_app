@@ -145,7 +145,7 @@ test('a network error or timeout is logged too, without the key', async () => {
   }
 });
 
-test('without GEMINI_MODEL the request goes to gemini-3.1-flash-lite (gemini-2.5-flash is retired for new keys)', async () => {
+test('without GEMINI_MODEL the request goes to gemini-flash-latest (Google alias for the newest flash model)', async () => {
   const originalFetch = globalThis.fetch;
   let url = '';
   try {
@@ -154,7 +154,7 @@ test('without GEMINI_MODEL the request goes to gemini-3.1-flash-lite (gemini-2.5
       return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"date":"2026-11-19","startTime":"14:00","endTime":"15:00"}' }] } }] }), { status: 200 });
     };
     await new GeminiAiAssistant('test-key').parseAppointmentPrompt({ prompt: 'x', referenceDate: '2026-11-18', clients: [] });
-    assert.match(url, /models\/gemini-3\.1-flash-lite:generateContent/);
+    assert.match(url, /models\/gemini-flash-latest:generateContent/);
   } finally {
     globalThis.fetch = originalFetch;
   }
