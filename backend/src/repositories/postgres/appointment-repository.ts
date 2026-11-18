@@ -14,6 +14,7 @@ interface AppointmentRow {
   end_time: string;
   status: AppointmentStatus;
   note: string;
+  reminder_sent_at?: string | null;
 }
 
 function toAppointment(row: AppointmentRow): Appointment {
@@ -26,6 +27,7 @@ function toAppointment(row: AppointmentRow): Appointment {
     endTime: row.end_time,
     status: row.status,
     note: row.note,
+    reminderSentAt: row.reminder_sent_at ?? null,
   };
 }
 
@@ -45,6 +47,30 @@ export class PostgresAppointmentRepository implements AppointmentRepository {
     return rows.map(toAppointment);
   }
 
+  async listByClient(userId: string, clientId: string): Promise<Appointment[]> {
+    const { rows } = await this.pool.query<AppointmentRow>(
+      'SELECT * FROM appointments WHERE user_id = $1 AND client_id = $2 ORDER BY date, start_time, id',
+      [userId, clientId],
+    );
+    return rows.map(toAppointment);
+  }
+
+  async markReminderSent(userId: string, id: string, sentAt: string | null): Promise<void> {
+    await this.pool.query(
+      'UPDATE appointments SET reminder_sent_at = $1 WHERE user_id = $2 AND id = $3',
+      [sentAt, userId, id],
+    );
+  }
+
+  async claimReminder(userId: string, id: string, sentAt: string): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      `UPDATE appointments SET reminder_sent_at = $1
+        WHERE user_id = $2 AND id = $3 AND status = 'scheduled' AND reminder_sent_at IS NULL`,
+      [sentAt, userId, id],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
   /**
    * Çakışma kontrolü veritabanındaki dışlama kısıtıdır (kontrol ve yazma tek ifade, atomik).
    * Kısıt ihlal edilirse hiçbir şey yazılmaz ve `undefined` döner.
@@ -52,11 +78,12 @@ export class PostgresAppointmentRepository implements AppointmentRepository {
   async saveIfNoConflict(appointment: Appointment): Promise<Appointment | undefined> {
     try {
       const { rowCount } = await this.pool.query(
-        `INSERT INTO appointments (id, user_id, client_id, date, start_time, end_time, status, note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO appointments (id, user_id, client_id, date, start_time, end_time, status, note, reminder_sent_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (id) DO UPDATE
             SET client_id = EXCLUDED.client_id, date = EXCLUDED.date, start_time = EXCLUDED.start_time,
-                end_time = EXCLUDED.end_time, status = EXCLUDED.status, note = EXCLUDED.note
+                end_time = EXCLUDED.end_time, status = EXCLUDED.status, note = EXCLUDED.note,
+                reminder_sent_at = EXCLUDED.reminder_sent_at
           WHERE appointments.user_id = EXCLUDED.user_id`,
         [
           appointment.id,
@@ -67,6 +94,7 @@ export class PostgresAppointmentRepository implements AppointmentRepository {
           appointment.endTime,
           appointment.status,
           appointment.note,
+          appointment.reminderSentAt ?? null,
         ],
       );
       // Aynı id başka bir kullanıcıya aitse hiçbir satır yazılmaz.

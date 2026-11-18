@@ -14,3 +14,8 @@
   color: var(--fg);
   font: inherit;
 }
+
+.client-form-hint {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}

@@ -1,4 +1,5 @@
 import type pg from 'pg';
+import { GeminiAiAssistant } from './ai/gemini-ai-assistant.js';
 import type { AppDeps } from './app.js';
 import { DEMO_USERS, DemoIdentityProvider } from './auth/demo-identity-provider.js';
 import type { IdentityProvider } from './auth/identity-provider.js';
@@ -8,13 +9,25 @@ import { createPool } from './db/pool.js';
 import { upsertUsers } from './db/users.js';
 import { MemoryAppointmentRepository } from './repositories/memory/appointment-repository.js';
 import { MemoryClientRepository } from './repositories/memory/client-repository.js';
+import { MemoryReminderNotificationRepository } from './repositories/memory/reminder-notification-repository.js';
 import { MemorySessionStore } from './repositories/memory/session-store.js';
+import { MemoryUserRepository } from './repositories/memory/user-repository.js';
 import { PostgresAppointmentRepository } from './repositories/postgres/appointment-repository.js';
 import { PostgresClientRepository } from './repositories/postgres/client-repository.js';
+import { PostgresReminderNotificationRepository } from './repositories/postgres/reminder-notification-repository.js';
 import { PostgresSessionStore } from './repositories/postgres/session-store.js';
-import type { AppointmentRepository, ClientRepository, SessionStore } from './repositories/types.js';
+import { PostgresUserRepository } from './repositories/postgres/user-repository.js';
+import type {
+  AppointmentRepository,
+  ClientRepository,
+  ReminderNotificationRepository,
+  SessionStore,
+  UserRepository,
+} from './repositories/types.js';
 import { AppointmentService } from './services/appointment-service.js';
 import { ClientService } from './services/client-service.js';
+import { ConsoleEmailSender } from './services/email-sender.js';
+import { ReminderService } from './services/reminder-service.js';
 
 /** Demo hesaplar kapalıyken hiç kimse giriş yapamaz. */
 const noIdentityProvider: IdentityProvider = {
@@ -24,13 +37,32 @@ const noIdentityProvider: IdentityProvider = {
 
 function assemble(
   config: Config,
-  repos: { clients: ClientRepository; appointments: AppointmentRepository; sessionStore: SessionStore },
+  repos: {
+    users: UserRepository;
+    clients: ClientRepository;
+    appointments: AppointmentRepository;
+    sessionStore: SessionStore;
+    notifications: ReminderNotificationRepository;
+  },
 ): AppDeps {
   const provider = config.demoAccountsEnabled ? new DemoIdentityProvider() : noIdentityProvider;
+  const ai = new GeminiAiAssistant(config.geminiApiKey, config.geminiModel);
+  const emailSender = new ConsoleEmailSender();
+  const reminders = new ReminderService(
+    repos.users,
+    repos.appointments,
+    repos.clients,
+    repos.notifications,
+    ai,
+    emailSender,
+  );
+
   return {
     sessions: new SessionService(provider, repos.sessionStore),
     clients: new ClientService(repos.clients),
     appointments: new AppointmentService(repos.appointments, repos.clients),
+    ai,
+    reminders,
     production: config.production,
   };
 }
@@ -39,9 +71,11 @@ function assemble(
 export async function buildPostgresDeps(pool: pg.Pool, config: Config): Promise<AppDeps> {
   if (config.demoAccountsEnabled) await upsertUsers(pool, DEMO_USERS);
   return assemble(config, {
+    users: new PostgresUserRepository(pool),
     clients: new PostgresClientRepository(pool),
     appointments: new PostgresAppointmentRepository(pool),
     sessionStore: new PostgresSessionStore(pool),
+    notifications: new PostgresReminderNotificationRepository(pool),
   });
 }
 
@@ -61,9 +95,11 @@ export async function buildDeps(env: NodeJS.ProcessEnv): Promise<AppDeps> {
   if (!config.databaseUrl) {
     const clients = new MemoryClientRepository();
     return assemble(config, {
+      users: new MemoryUserRepository(DEMO_USERS),
       clients,
       appointments: new MemoryAppointmentRepository(),
       sessionStore: new MemorySessionStore(),
+      notifications: new MemoryReminderNotificationRepository(),
     });
   }
 

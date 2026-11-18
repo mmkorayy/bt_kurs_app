@@ -1,0 +1,41 @@
+.panel-footer {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem 16px 2rem;
+  border-top: 1.5px solid var(--border);
+  color: var(--muted);
+}
+.reminder-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.reminder-controls select,
+.reminder-controls button {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--field-border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+.reminder-controls button { cursor: pointer; font-weight: 600; }
+.reminder-controls button:disabled { opacity: 0.6; cursor: default; }
+.reminder-list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+.reminder-list li {
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.reminder-to { display: block; color: var(--muted); font-size: 0.9rem; }
+.reminder-list p { margin: 0.5rem 0 0; white-space: pre-wrap; }

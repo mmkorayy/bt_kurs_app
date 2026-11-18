@@ -18,6 +18,14 @@ try {
   process.exit(1);
 }
 
+// Her 10 dakikada bir, hatırlatma penceresine giren randevular için e-posta (simülasyon) gönderir.
+setInterval(
+  () => {
+    deps.reminders.checkAllUsers().catch((error) => console.error('Hatırlatma kontrolü başarısız:', error instanceof Error ? error.message : error));
+  },
+  10 * 60 * 1000,
+).unref();
+
 createApp({ ...deps, staticDir, docs: { specPath } }).listen(config.port, () => {
   console.log(`Bookpal http://localhost:${config.port} adresinde çalışıyor`);
   if (!fs.existsSync(path.join(staticDir, 'index.html'))) {

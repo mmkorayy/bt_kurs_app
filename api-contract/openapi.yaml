@@ -284,6 +284,112 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /ai/parse-appointment:
+    post:
+      summary: Türkçe bir cümleden randevu taslağı çıkarır. Hiçbir şey kaydetmez; kayıt için kullanıcı onayı gerekir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt:
+                  type: string
+                  example: Yarın 14:00 Elif Yıldız kontrol randevusu
+                referenceDate:
+                  type: string
+                  format: date
+                  description: "Yarın, haftaya gibi sözlerin hesaplandığı gün (varsayılan: bugün, İstanbul saatiyle). Gerçek bir tarih değilse 400 döner."
+      responses:
+        '200':
+          description: Randevu taslağı. Danışan kayıtlı değilse clientId boş, suggestedClient dolu gelir.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  draft:
+                    $ref: '#/components/schemas/AppointmentDraft'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /settings/reminders:
+    get:
+      summary: Randevu öncesi hatırlatma süresi ayarını döndürür (varsayılan 30 dakika).
+      responses:
+        '200':
+          description: Ayar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      summary: Hatırlatma süresini değiştirir. null hatırlatmaları kapatır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderSettings'
+      responses:
+        '200':
+          description: Güncel ayar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderSettings'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /reminders/check:
+    post:
+      summary: Hatırlatma penceresine girmiş randevuları şimdi tarar ve henüz gönderilmemiş e-postaları (simülasyon) gönderir.
+      responses:
+        '200':
+          description: Bu çağrıda gönderilenler.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sentCount:
+                    type: integer
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReminderNotification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /reminders/sent:
+    get:
+      summary: Gönderilen hatırlatmaları (en yeni önce) listeler.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Hatırlatmalar.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReminderNotification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 security:
   - bearerAuth: []
   - cookieAuth: []
@@ -448,6 +554,12 @@ components:
               type: string
             userId:
               type: string
+            reminderSentAt:
+              type: string
+              format: date-time
+              nullable: true
+              readOnly: true
+              description: Hatırlatma e-postasının gönderildiği an. Tarih, saat ya da durum değişince null olur.
             client:
               type: object
               properties:
@@ -457,3 +569,52 @@ components:
                   type: string
                 lastName:
                   type: string
+    AppointmentDraft:
+      type: object
+      properties:
+        clientId:
+          type: string
+          nullable: true
+        suggestedClient:
+          type: object
+          nullable: true
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        note:
+          type: string
+    ReminderSettings:
+      type: object
+      required: [reminderMinutesBefore]
+      properties:
+        reminderMinutesBefore:
+          type: integer
+          nullable: true
+          enum: [15, 30, 60, null]
+    ReminderNotification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        appointmentId:
+          type: string
+        recipientEmail:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        sentAt:
+          type: string
+          format: date-time

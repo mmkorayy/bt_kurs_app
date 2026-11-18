@@ -15,6 +15,12 @@ export class MemoryAppointmentRepository implements AppointmentRepository {
       .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
   }
 
+  async listByClient(userId: string, clientId: string): Promise<Appointment[]> {
+    return [...this.appointments.values()]
+      .filter((a) => a.userId === userId && a.clientId === clientId)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  }
+
   // Kontrol ve yazma arasında await yok: tek süreçte atomiktir.
   async saveIfNoConflict(appointment: Appointment): Promise<Appointment | undefined> {
     if (appointment.status !== 'cancelled') {
@@ -31,6 +37,21 @@ export class MemoryAppointmentRepository implements AppointmentRepository {
     }
     this.appointments.set(appointment.id, appointment);
     return appointment;
+  }
+
+  async markReminderSent(userId: string, id: string, sentAt: string | null): Promise<void> {
+    const appointment = await this.findById(userId, id);
+    if (!appointment) return;
+    this.appointments.set(id, { ...appointment, reminderSentAt: sentAt });
+  }
+
+  // Kontrol ve yazma arasında await yok: tek süreçte atomiktir.
+  async claimReminder(userId: string, id: string, sentAt: string): Promise<boolean> {
+    const appointment = this.appointments.get(id);
+    if (!appointment || appointment.userId !== userId) return false;
+    if (appointment.status !== 'scheduled' || appointment.reminderSentAt) return false;
+    this.appointments.set(id, { ...appointment, reminderSentAt: sentAt });
+    return true;
   }
 
   async delete(userId: string, id: string): Promise<boolean> {
